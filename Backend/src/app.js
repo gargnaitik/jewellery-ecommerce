@@ -1,27 +1,29 @@
 require('dotenv').config();
 const express = require('express');
-const { connectPostgres } = require('./config/db');
+const { connectPostgres, sequelize } = require('./config/db');
 const connectMongo = require('./config/mongo');
-require('./config/redis'); // auto connects on import
+require('./config/redis');
+
+// Route imports
+const userRoutes = require('./modules/users/user.routes');
+const productRoutes = require('./modules/products/product.routes');
+const pricingRoutes = require('./modules/pricing/pricing.routes');
+const authRoutes = require('./modules/auth/auth.routes');
 
 const app = express();
 app.use(express.json());
 
-// Health check route — tests all connections
-app.get('/health', async (req, res) => {
-    res.json({
-        status: 'ok',
-        message: 'Server is running',
-        timestamp: new Date(),
-        databases: {
-            postgres: 'connected',
-            mongodb: 'connected',
-            redis: 'connected',
-        }
-    });
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/pricing', pricingRoutes);
+
+// Health check
+app.get('/health', (req, res) => {
+    res.json({ status: 'ok', timestamp: new Date() });
 });
 
-// Start server
 const PORT = process.env.PORT || 3000;
 
 const start = async () => {
@@ -29,13 +31,16 @@ const start = async () => {
         await connectPostgres();
         await connectMongo();
 
+        await sequelize.sync({ alter: true });
+        console.log('✅ Database synced');
+
         app.listen(PORT, () => {
             console.log(`🚀 Server running on http://localhost:${PORT}`);
-            console.log(`🔍 Health check: http://localhost:${PORT}/health`);
+            console.log(`🔍 Health: http://localhost:${PORT}/health`);
         });
 
     } catch (err) {
-        console.error('❌ Failed to start server:', err.message);
+        console.error('❌ Failed to start:', err.message);
         process.exit(1);
     }
 };
