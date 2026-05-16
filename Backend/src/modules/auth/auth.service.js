@@ -3,6 +3,8 @@ const jwt = require('jsonwebtoken');
 const axios = require('axios');
 const redis = require('../../config/redis');
 const User = require('../users/user.model');
+const notificationService = require('../notifications/notification.service');
+
 
 // ─── Constants ────────────────────────────────────────
 const OTP_TTL = 300;   // 5 minutes in seconds
@@ -69,7 +71,7 @@ const registerWithEmail = async ({ name, email, password, phone }) => {
         password_hash,
         is_verified: true,  // email users verified immediately
     });
-
+    await notificationService.notifyUserRegistered(user);
     // generate token
     const token = generateToken(user.id, user.role);
 

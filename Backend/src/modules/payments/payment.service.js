@@ -2,6 +2,8 @@ const Razorpay = require('razorpay');
 const crypto = require('crypto');
 const Payment = require('./payment.model');
 const Order = require('../orders/order.model');
+const notificationService = require('../notifications/notification.service');
+const User = require('../users/user.model');
 
 // initialize Razorpay instance
 const razorpay = new Razorpay({
@@ -78,8 +80,6 @@ const verifyPayment = async ({
 }) => {
 
     // Step 1 — verify signature
-    // Razorpay sends a signature = HMAC of order_id + payment_id
-    // You recreate it and compare — if they match, payment is genuine
     const body = razorpay_order_id + '|' + razorpay_payment_id;
 
     const expectedSignature = crypto
@@ -95,6 +95,20 @@ const verifyPayment = async ({
             { status: 'failed' },
             { where: { razorpay_order_id } }
         );
+
+        // fetch order and user for failed notification
+        const failedOrder = await Order.findByPk(orderId, {
+            include: [{ model: User, as: 'user' }]
+        });
+
+        // notify user payment failed
+        if (failedOrder?.user) {
+            await notificationService.notifyPaymentFailed(
+                failedOrder.user,
+                failedOrder
+            );
+        }
+
         throw new Error('Payment verification failed. Invalid signature.');
     }
 
@@ -114,23 +128,36 @@ const verifyPayment = async ({
     );
 
     // Step 4 — update order status
-    const order = await Order.findByPk(orderId);
+    const order = await Order.findByPk(orderId, {
+        include: [
+            { model: OrderItem, as: 'items' },
+            { model: User, as: 'user' },
+        ]
+    });
+
     await order.update({
         payment_status: 'paid',
         payment_method: razorpayPayment.method,
         status: 'confirmed',
     });
 
+    // Step 5 — notify user payment successful
+    if (order.user) {
+        await notificationService.notifyOrderPlaced(
+            order.user,
+            order
+        );
+    }
+
     return {
         success: true,
         payment_id: razorpay_payment_id,
         order_id: orderId,
-        amount: razorpayPayment.amount / 100, // paise to rupees
+        amount: razorpayPayment.amount / 100,
         method: razorpayPayment.method,
         message: 'Payment successful',
     };
 };
-
 // ─── Refund payment ───────────────────────────────────
 const refundPayment = async (orderId, amount) => {
 

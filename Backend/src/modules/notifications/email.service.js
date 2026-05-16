@@ -287,10 +287,56 @@ const sendPaymentFailedEmail = async ({ name, email, order }) => {
     });
 };
 
+const sendOrderCancelledEmail = async ({ name, email, order }) => {
+    await sendEmail({
+        to: email,
+        subject: `❌ Order Cancelled — #${order.id.slice(0, 8).toUpperCase()}`,
+        html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+
+                <h2 style="color: #dc3545;">Order Cancelled</h2>
+                <p>Hi ${name}, your order has been cancelled.</p>
+
+                <div style="background: #f9f9f9; padding: 16px; border-radius: 8px; margin: 16px 0;">
+                    <p><strong>Order ID:</strong> #${order.id.slice(0, 8).toUpperCase()}</p>
+                    <p><strong>Cancelled On:</strong> ${new Date(order.cancelled_at).toLocaleDateString('en-IN')}</p>
+                    ${order.cancel_reason ? `<p><strong>Reason:</strong> ${order.cancel_reason}</p>` : ''}
+                </div>
+
+                <!-- Refund info -->
+                <div style="border-left: 4px solid #b8860b; padding: 12px 16px; margin: 16px 0;">
+                    <h4 style="margin: 0 0 8px; color: #b8860b;">💰 Refund Information</h4>
+                    <p style="margin: 0; color: #555;">
+                        If payment was made, your refund of
+                        <strong>₹${Number(order.total_amount).toLocaleString('en-IN')}</strong>
+                        will be processed within 5-7 business days to your original payment method.
+                    </p>
+                </div>
+
+                <!-- Shop again -->
+                <div style="text-align: center; margin: 24px 0;">
+                    <p>We hope to see you again soon!</p>
+                    <a href="${process.env.FRONTEND_URL}/products"
+                       style="background: #b8860b; color: white; padding: 12px 28px;
+                              text-decoration: none; border-radius: 4px;
+                              display: inline-block;">
+                        Continue Shopping
+                    </a>
+                </div>
+
+                <p style="color: #888; margin-top: 32px; font-size: 12px; text-align: center;">
+                    Questions? Contact us at support@jewellery.com or call 1800-XXX-XXXX
+                </p>
+            </div>
+        `,
+    });
+};
+
 module.exports = {
     sendWelcomeEmail,
     sendOrderConfirmationEmail,
     sendOrderShippedEmail,
-    sendPaymentFailedEmail,
     sendOrderDeliveredEmail,
+    sendOrderCancelledEmail,   // ← add this
+    sendPaymentFailedEmail,
 };

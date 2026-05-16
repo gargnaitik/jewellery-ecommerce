@@ -76,10 +76,27 @@ const notifyPaymentFailed = async (user, order) => {
     ]);
 };
 
+const notifyOrderCancelled = async (user, order) => {
+    await Promise.allSettled([
+        user.email && emailService.sendOrderCancelledEmail({
+            name: user.name,
+            email: user.email,
+            order,
+        }),
+        user.phone && smsService.sendOrderCancelledSMS({
+            name: user.name,
+            phone: user.phone,
+            orderId: order.id,
+            reason: order.cancel_reason,
+        }),
+    ]);
+};
+
 module.exports = {
     notifyUserRegistered,
     notifyOrderPlaced,
     notifyOrderShipped,
     notifyOrderDelivered,
     notifyPaymentFailed,
+    notifyOrderCancelled,
 };

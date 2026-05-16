@@ -3,6 +3,9 @@ const OrderItem = require('./orderItem.model');
 const Product = require('../products/product.model');
 const pricingService = require('../pricing/pricing.service');
 const { sequelize } = require('../../config/db');
+const notificationService = require('../notifications/notification.service');
+const User = require('../users/user.model');
+
 
 // ─── Create order (checkout) ──────────────────────────
 const createOrder = async ({ userId, items, shipping_address }) => {
@@ -102,6 +105,11 @@ const createOrder = async ({ userId, items, shipping_address }) => {
                 { $inc: { stock: -item.quantity } }
             );
         }
+        // fetch user for notification
+        const user = await User.findByPk(userId);
+
+        // send order confirmation
+        await notificationService.notifyOrderPlaced(user, order);
 
         return newOrder;
     });
@@ -148,7 +156,13 @@ const getAllOrders = async (filters = {}) => {
 
 // ─── Update order status (admin) ──────────────────────
 const updateOrderStatus = async (orderId, status, extra = {}) => {
-    const order = await Order.findByPk(orderId);
+
+    const order = await Order.findByPk(orderId, {
+        include: [
+            { model: OrderItem, as: 'items' },
+            { model: User, as: 'user' },
+        ]
+    });
     if (!order) throw new Error('Order not found');
 
     const updates = { status };
@@ -174,10 +188,50 @@ const updateOrderStatus = async (orderId, status, extra = {}) => {
         }
     }
 
+    // update order
     await order.update(updates);
-    return await getOrderById(orderId);
-};
 
+    // fetch updated order fresh with all includes
+    const updatedOrder = await Order.findByPk(orderId, {
+        include: [
+            { model: OrderItem, as: 'items' },
+            { model: User, as: 'user' },
+        ]
+    });
+
+    // send notification based on status
+    if (updatedOrder.user) {
+        switch (status) {
+
+            case 'shipped':
+                await notificationService.notifyOrderShipped(
+                    updatedOrder.user,
+                    updatedOrder
+                );
+                break;
+
+            case 'delivered':
+                await notificationService.notifyOrderDelivered(
+                    updatedOrder.user,
+                    updatedOrder
+                );
+                break;
+
+            case 'cancelled':
+                await notificationService.notifyOrderCancelled(
+                    updatedOrder.user,
+                    updatedOrder
+                );
+                break;
+
+            // confirmed, processing — no notification needed
+            default:
+                break;
+        }
+    }
+
+    return updatedOrder;
+};
 // ─── Cancel order (user) ──────────────────────────────
 const cancelOrder = async (orderId, userId, reason) => {
 

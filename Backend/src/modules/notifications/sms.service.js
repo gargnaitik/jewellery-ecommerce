@@ -73,10 +73,21 @@ const sendPaymentFailedSMS = async ({ phone, name, orderId }) => {
     });
 };
 
+
+// ─── Order cancelled SMS ──────────────────────────────
+const sendOrderCancelledSMS = async ({ phone, name, orderId, reason }) => {
+    await sendSMS({
+        phone,
+        message: `Hi ${name}, your order #${orderId.slice(0, 8).toUpperCase()} has been cancelled. Reason: ${reason || 'Order cancelled by customer'}. For assistance, contact support. - Jewellery Store`,
+    });
+};
+
+
 module.exports = {
     sendWelcomeSMS,
     sendOrderConfirmationSMS,
     sendOrderShippedSMS,
     sendOrderDeliveredSMS,
     sendPaymentFailedSMS,
+    sendOrderCancelledSMS,
 };
