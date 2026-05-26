@@ -109,7 +109,7 @@ const createOrder = async ({ userId, items, shipping_address }) => {
         const user = await User.findByPk(userId);
 
         // send order confirmation
-        await notificationService.notifyOrderPlaced(user, order);
+        await notificationService.notifyOrderPlaced(user, newOrder);
 
         return newOrder;
     });
