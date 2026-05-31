@@ -1,0 +1,1 @@
+const ProductFilters = () => <div>Filters</div>; export default ProductFilters;

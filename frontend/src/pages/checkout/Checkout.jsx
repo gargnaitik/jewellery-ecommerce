@@ -1,0 +1,1 @@
+const Checkout = () => <div className='p-8'><h1>Checkout</h1></div>; export default Checkout;

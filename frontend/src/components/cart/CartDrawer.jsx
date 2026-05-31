@@ -1,0 +1,1 @@
+const CartDrawer = () => <div>Cart</div>; export default CartDrawer;

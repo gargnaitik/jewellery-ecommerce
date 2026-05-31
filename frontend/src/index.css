@@ -1,7 +1,10 @@
+/* 1. All @import statements must go first */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
 @import "tailwindcss";
 
+/* 2. Then configuration blocks like @theme */
 @theme {
-  --color-gold-50:  #fffbeb;
+  --color-gold-50: #fffbeb;
   --color-gold-100: #fef3c7;
   --color-gold-200: #fde68a;
   --color-gold-300: #fcd34d;
@@ -13,5 +16,36 @@
   --color-gold-900: #78350f;
 
   --font-serif: "Playfair Display", Georgia, serif;
-  --font-sans:  "Inter", sans-serif;
+  --font-sans: "Inter", sans-serif;
+}
+
+/* 3. Finally, your custom classes and base styles */
+body {
+  @apply font-sans text-gray-800 bg-white;
+}
+
+h1,
+h2,
+h3 {
+  @apply font-serif;
+}
+
+.btn-gold {
+  @apply bg-gold-700 hover:bg-gold-800 text-white px-6 py-3 rounded font-medium transition-all duration-200 cursor-pointer;
+}
+
+.btn-outline {
+  @apply border border-gold-700 text-gold-700 hover:bg-gold-700 hover:text-white px-6 py-3 rounded font-medium transition-all duration-200;
+}
+
+.card {
+  @apply bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200;
+}
+
+.input {
+  @apply w-full border border-gray-300 rounded px-4 py-3 focus:outline-none focus:border-gold-700 focus:ring-1 focus:ring-gold-700 transition-all;
+}
+
+.label {
+  @apply block text-sm font-medium text-gray-700 mb-1;
 }
