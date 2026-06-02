@@ -6,17 +6,16 @@ import './Navbar.css';
    Gold Ticker Strip
    ═══════════════════════════════════════════════════════════════ */
 export default function GoldRateTicker() {
-    const { rates } = useGoldStore();
+    const { price18k, price22k, price24k } = useGoldStore();
 
-    /* Fallback mock data when API isn't connected yet */
-    const price22k = rates?.['22K'] ?? 7243;
-    const price24k = rates?.['24K'] ?? (7243 * 1.09);
-    const price18k = rates?.['18K'] ?? (7243 * 0.78);
+    const fallback22k = price22k || 7243;
+    const fallback24k = price24k || fallback22k * 1.09;
+    const fallback18k = price18k || fallback22k * 0.818;
 
     const items = [
-        `22K Gold  ₹${Math.round(price22k).toLocaleString('en-IN')}/g`,
-        `24K Gold  ₹${Math.round(price24k).toLocaleString('en-IN')}/g`,
-        `18K Gold  ₹${Math.round(price18k).toLocaleString('en-IN')}/g`,
+        `22K Gold  ₹${Math.round(fallback22k).toLocaleString('en-IN')}/g`,
+        `24K Gold  ₹${Math.round(fallback24k).toLocaleString('en-IN')}/g`,
+        `18K Gold  ₹${Math.round(fallback18k).toLocaleString('en-IN')}/g`,
         'Free Shipping on ₹10,000+',
         'BIS Hallmarked Jewellery',
     ];

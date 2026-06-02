@@ -1,1 +1,0 @@
-const ProductList = () => <div className='p-8'><h1>Products</h1></div>; export default ProductList;

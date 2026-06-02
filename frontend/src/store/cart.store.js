@@ -4,61 +4,68 @@ import { persist } from 'zustand/middleware';
 const useCartStore = create(
     persist(
         (set, get) => ({
+            /* ── State ─────────────────────────────────────────────── */
             items: [],
             isOpen: false,
 
-            // open/close cart drawer
-            openCart:  () => set({ isOpen: true  }),
+            /* ── Drawer controls ───────────────────────────────────── */
+            openCart: () => set({ isOpen: true }),
             closeCart: () => set({ isOpen: false }),
+            toggleCart: () => set((s) => ({ isOpen: !s.isOpen })),
 
-            // add item to cart
+            /* ── Add item ──────────────────────────────────────────── */
             addItem: (product) => {
                 const items = get().items;
-                const existing = items.find(i => i._id === product._id);
-
+                const existing = items.find((i) => i._id === product._id);
+                const item = {
+                    ...product,
+                    base_price: Number(product.base_price ?? product.price ?? 0),
+                    price: Number(product.base_price ?? product.price ?? 0),
+                    quantity: product.quantity ?? 1,
+                };
                 if (existing) {
-                    // increase quantity if already in cart
                     set({
-                        items: items.map(i =>
+                        items: items.map((i) =>
                             i._id === product._id
-                                ? { ...i, quantity: i.quantity + 1 }
+                                ? { ...i, quantity: i.quantity + item.quantity }
                                 : i
-                        )
+                        ),
                     });
                 } else {
-                    set({ items: [...items, { ...product, quantity: 1 }] });
+                    set({ items: [...items, item] });
                 }
+                set({ isOpen: true });   // auto-open drawer on add
             },
 
-            // remove item
-            removeItem: (productId) => set({
-                items: get().items.filter(i => i._id !== productId)
-            }),
+            /* ── Remove item ───────────────────────────────────────── */
+            removeItem: (id) =>
+                set({ items: get().items.filter((i) => i._id !== id) }),
 
-            // update quantity
-            updateQuantity: (productId, quantity) => {
-                if (quantity < 1) return;
+            /* ── Update quantity ───────────────────────────────────── */
+            updateQuantity: (id, quantity) => {
+                if (quantity < 1) { get().removeItem(id); return; }
                 set({
-                    items: get().items.map(i =>
-                        i._id === productId ? { ...i, quantity } : i
-                    )
+                    items: get().items.map((i) =>
+                        i._id === id ? { ...i, quantity } : i
+                    ),
                 });
             },
 
-            // clear cart
+            /* ── Clear cart (called after successful order) ────────── */
             clearCart: () => set({ items: [] }),
 
-            // computed — total items count
-            totalItems: () => get().items.reduce(
-                (sum, i) => sum + i.quantity, 0
-            ),
-
-            // computed — total price
-            totalPrice: () => get().items.reduce(
-                (sum, i) => sum + (i.base_price * i.quantity), 0
-            ),
+            /* ── Derived values ────────────────────────────────────── */
+            get totalItems() {
+                return get().items.reduce((s, i) => s + i.quantity, 0);
+            },
+            get subtotal() {
+                return get().items.reduce((s, i) => s + Number(i.base_price ?? i.price ?? 0) * i.quantity, 0);
+            },
         }),
-        { name: 'cart-storage' }
+        {
+            name: 'kanakam-cart',           // localStorage key
+            partialize: (state) => ({ items: state.items }),  // only persist items
+        }
     )
 );
 

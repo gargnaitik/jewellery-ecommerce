@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { Search, ShoppingBag, User, Heart, Menu, X, ChevronDown, LogOut } from 'lucide-react';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Search, ShoppingBag, User, Menu, X, ChevronDown, LogOut } from 'lucide-react';
 import useAuthStore from '../../store/auth.store';
 import useCartStore from '../../store/cart.store';
 import useGoldStore from '../../store/gold.store';
@@ -43,8 +43,6 @@ const CATEGORIES = [
 const NAV_LINKS = [
   { label: 'Home', to: '/' },
   { label: 'Collections', to: '/products', hasMega: true },
-  { label: 'Gold Rate', to: '/gold-rate' },
-  { label: 'About', to: '/about' },
 ];
 
 
@@ -177,9 +175,6 @@ function UserDropdown({ user, onLogout }) {
         <Link to="/orders" className="user-dropdown__link" onClick={() => setOpen(false)}>
           My Orders
         </Link>
-        <Link to="/wishlist" className="user-dropdown__link" onClick={() => setOpen(false)}>
-          Wishlist
-        </Link>
         <Link to="/profile" className="user-dropdown__link" onClick={() => setOpen(false)}>
           Profile
         </Link>
@@ -202,9 +197,7 @@ function UserDropdown({ user, onLogout }) {
 export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuthStore();
   const cartItems = useCartStore((s) => s.items);
-  const { fetchRates } = useGoldStore();
-  const location = useLocation();
-
+  const { fetchRate } = useGoldStore();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [megaOpen, setMegaOpen] = useState(false);
@@ -213,8 +206,8 @@ export default function Navbar() {
 
   /* Fetch gold rates once on mount */
   useEffect(() => {
-    fetchRates();
-  }, [fetchRates]);
+    fetchRate();
+  }, [fetchRate]);
 
   /* Scroll listener */
   useEffect(() => {
@@ -222,12 +215,6 @@ export default function Navbar() {
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
-
-  /* Close mobile menu on route change */
-  useEffect(() => {
-    setMobileOpen(false);
-    setMegaOpen(false);
-  }, [location]);
 
   /* Lock body scroll when mobile menu is open */
   useEffect(() => {
@@ -298,16 +285,12 @@ export default function Navbar() {
                 <Search size={20} />
               </button>
 
-              <Link to="/wishlist" className="nav-action-btn" aria-label="Wishlist" id="navbar-wishlist-btn">
-                <Heart size={20} />
-              </Link>
-
-              <Link to="/cart" className="nav-action-btn nav-action-btn--cart" aria-label="Cart" id="navbar-cart-btn">
+              <button onClick={() => useCartStore.getState().openCart()} className="nav-action-btn nav-action-btn--cart" aria-label="Cart" id="navbar-cart-btn">
                 <ShoppingBag size={20} />
                 {cartCount > 0 && (
                   <span className="nav-action-btn__badge">{cartCount > 9 ? '9+' : cartCount}</span>
                 )}
-              </Link>
+              </button>
 
               {isAuthenticated && user ? (
                 <UserDropdown user={user} onLogout={logout} />
@@ -415,6 +398,9 @@ export default function Navbar() {
               </div>
               <Link to="/orders" className="mobile-drawer__footer-link" onClick={() => setMobileOpen(false)}>
                 My Orders
+              </Link>
+              <Link to="/profile" className="mobile-drawer__footer-link" onClick={() => setMobileOpen(false)}>
+                Profile
               </Link>
               <button onClick={() => { logout(); setMobileOpen(false); }} className="mobile-drawer__logout">
                 <LogOut size={16} />

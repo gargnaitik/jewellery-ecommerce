@@ -1,20 +1,22 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: 'http://localhost:3000/api',
+    baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api',
     headers: { 'Content-Type': 'application/json' },
+    timeout: 10000,
 });
 
-// attach JWT token to every request automatically
-api.interceptors.request.use((config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-});
+/* ── Request interceptor — attach Bearer token ───────────────── */
+api.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem('token');
+        if (token) config.headers.Authorization = `Bearer ${token}`;
+        return config;
+    },
+    (error) => Promise.reject(error)
+);
 
-// handle 401 globally — redirect to login
+/* ── Response interceptor — handle 401 globally ─────────────── */
 api.interceptors.response.use(
     (response) => response,
     (error) => {

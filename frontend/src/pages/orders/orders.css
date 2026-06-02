@@ -1,0 +1,190 @@
+/* orders.css */
+.orders-page {
+  padding: 120px 5% 60px;
+  min-height: 100vh;
+  background-color: var(--color-bg, #0a0a0a);
+  color: var(--color-text, #f4f4f4);
+  font-family: 'Inter', sans-serif;
+}
+
+.orders-header {
+  margin-bottom: 40px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 20px;
+}
+
+.orders-header h1 {
+  font-size: 2.5rem;
+  font-weight: 300;
+  color: var(--color-primary, #d4af37);
+  letter-spacing: -0.5px;
+}
+
+.orders-header p {
+  color: #888;
+  margin-top: 10px;
+  font-size: 1.1rem;
+}
+
+.orders-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.order-card {
+  background: rgba(25, 25, 25, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 24px;
+  backdrop-filter: blur(10px);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-decoration: none;
+  color: inherit;
+}
+
+.order-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+  border-color: rgba(212, 175, 55, 0.3);
+}
+
+.order-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.order-id {
+  font-family: monospace;
+  font-size: 0.9rem;
+  color: #aaa;
+}
+
+.order-date {
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.order-status {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-pending { background: rgba(255, 193, 7, 0.2); color: #ffc107; }
+.status-processing { background: rgba(23, 162, 184, 0.2); color: #17a2b8; }
+.status-shipped { background: rgba(0, 123, 255, 0.2); color: #007bff; }
+.status-delivered { background: rgba(40, 167, 69, 0.2); color: #28a745; }
+.status-cancelled { background: rgba(220, 53, 69, 0.2); color: #dc3545; }
+
+.order-price-action {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.order-total {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #d4af37;
+}
+
+.view-btn {
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.order-card:hover .view-btn {
+  background: #fff;
+  color: #000;
+}
+
+.empty-orders {
+  text-align: center;
+  padding: 80px 20px;
+  background: rgba(25, 25, 25, 0.4);
+  border-radius: 12px;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.empty-orders svg {
+  color: #555;
+  margin-bottom: 20px;
+}
+
+.empty-orders h2 {
+  font-size: 1.8rem;
+  margin-bottom: 10px;
+  color: #ddd;
+}
+
+.empty-orders p {
+  color: #888;
+  margin-bottom: 30px;
+}
+
+.shop-now-btn {
+  display: inline-block;
+  background: #d4af37;
+  color: #000;
+  padding: 12px 30px;
+  border-radius: 30px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: background 0.3s ease;
+}
+
+.shop-now-btn:hover {
+  background: #b5952f;
+}
+
+/* Loader */
+.loader-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(212, 175, 55, 0.2);
+  border-radius: 50%;
+  border-top-color: #d4af37;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+  .order-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+  }
+  
+  .order-price-action {
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+}
