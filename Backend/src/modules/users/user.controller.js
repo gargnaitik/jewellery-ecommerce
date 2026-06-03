@@ -87,11 +87,47 @@ const deleteUser = async (req, res) => {
         res.status(400).json({ success: false, message: err.message });
     }
 };
+const updateUserRole = async (req, res) => {
+    try {
+        const { role } = req.body;
 
+        if (!['admin', 'user'].includes(role)) {
+            return res.status(400).json({
+                success: false,
+                message: "Role must be 'admin' or 'user'",
+            });
+        }
+
+        // prevent self-demotion
+        if (req.params.id == req.user.id) {
+            return res.status(400).json({
+                success: false,
+                message: 'You cannot change your own role',
+            });
+        }
+
+        const user = await userService.findUserById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        await user.update({ role });
+
+        res.status(200).json({
+            success: true,
+            message: `User role updated to ${role}`,
+            data: { id: user.id, name: user.name, email: user.email, role },
+        });
+
+    } catch (err) {
+        res.status(400).json({ success: false, message: err.message });
+    }
+};
 module.exports = {
     createUser,
     getAllUsers,
     getUserById,
     updateUser,
     deleteUser,
+    updateUserRole,
 };

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import toast from 'react-hot-toast';
 
 const useCartStore = create(
     persist(
@@ -34,12 +35,15 @@ const useCartStore = create(
                 } else {
                     set({ items: [...items, item] });
                 }
+                toast.success('Added to cart');
                 set({ isOpen: true });   // auto-open drawer on add
             },
 
             /* ── Remove item ───────────────────────────────────────── */
-            removeItem: (id) =>
-                set({ items: get().items.filter((i) => i._id !== id) }),
+            removeItem: (id) => {
+                set({ items: get().items.filter((i) => i._id !== id) });
+                toast.success('Item removed');
+            },
 
             /* ── Update quantity ───────────────────────────────────── */
             updateQuantity: (id, quantity) => {

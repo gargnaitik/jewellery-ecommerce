@@ -1,12 +1,17 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, ArrowRight, Sparkles } from 'lucide-react';
+import toast from 'react-hot-toast';
 import useAuthStore from '../../store/auth.store';
 import './Auth.css';
 
 export default function Login() {
     const navigate = useNavigate();
+    const location = useLocation();
     const { login } = useAuthStore();
+
+    // redirect back to the page they tried to visit (if any)
+    const from = location.state?.from?.pathname || null;
 
     const [form, setForm] = useState({ email: '', password: '' });
     const [errors, setErrors] = useState({});
@@ -14,19 +19,16 @@ export default function Login() {
     const [loading, setLoading] = useState(false);
     const [apiError, setApiError] = useState('');
 
-    /* ── Validation ─────────────────────────────────────────────── */
     const validate = () => {
         const e = {};
         if (!form.email.trim())
             e.email = 'Email is required';
         else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
             e.email = 'Enter a valid email address';
-
         if (!form.password)
             e.password = 'Password is required';
         else if (form.password.length < 6)
             e.password = 'Password must be at least 6 characters';
-
         return e;
     };
 
@@ -46,9 +48,24 @@ export default function Login() {
         setApiError('');
         try {
             await login(form.email, form.password);
-            navigate('/');
+            toast.success('Welcome back!');
+
+            // ── Role-based redirect ──────────────────────────────
+            const { user } = useAuthStore.getState();
+
+            if (user?.role === 'admin') {
+                navigate('/admin', { replace: true });
+            } else if (from) {
+                // customer was redirected here from a protected page
+                navigate(from, { replace: true });
+            } else {
+                navigate('/', { replace: true });
+            }
+
         } catch (err) {
-            setApiError(err?.response?.data?.message || 'Invalid email or password');
+            const msg = err?.response?.data?.message || 'Invalid email or password';
+            setApiError(msg);
+            toast.error(msg);
         } finally {
             setLoading(false);
         }
@@ -87,7 +104,6 @@ export default function Login() {
             <div className="auth-form-panel">
                 <div className="auth-form-wrap">
 
-                    {/* Header */}
                     <div className="auth-form-header">
                         <Link to="/" className="auth-back-logo">
                             <span className="auth-logo-word">Kanakam</span>
@@ -96,17 +112,12 @@ export default function Login() {
                         <p className="auth-form-sub">Sign in to your account</p>
                     </div>
 
-                    {/* API Error */}
                     {apiError && (
-                        <div className="auth-alert auth-alert--error">
-                            {apiError}
-                        </div>
+                        <div className="auth-alert auth-alert--error">{apiError}</div>
                     )}
 
-                    {/* Form */}
                     <form className="auth-form" onSubmit={handleSubmit} noValidate>
 
-                        {/* Email */}
                         <div className={`auth-field ${errors.email ? 'auth-field--error' : ''}`}>
                             <label className="auth-label" htmlFor="login-email">Email Address</label>
                             <div className="auth-input-wrap">
@@ -125,7 +136,6 @@ export default function Login() {
                             {errors.email && <span className="auth-error">{errors.email}</span>}
                         </div>
 
-                        {/* Password */}
                         <div className={`auth-field ${errors.password ? 'auth-field--error' : ''}`}>
                             <div className="auth-label-row">
                                 <label className="auth-label" htmlFor="login-password">Password</label>
@@ -155,24 +165,20 @@ export default function Login() {
                             {errors.password && <span className="auth-error">{errors.password}</span>}
                         </div>
 
-                        {/* Submit */}
                         <button
                             type="submit"
                             className={`auth-submit ${loading ? 'auth-submit--loading' : ''}`}
                             disabled={loading}
                         >
-                            {loading ? (
-                                <span className="auth-spinner" />
-                            ) : (
-                                <>Sign In <ArrowRight size={16} /></>
-                            )}
+                            {loading
+                                ? <span className="auth-spinner" />
+                                : <>Sign In <ArrowRight size={16} /></>
+                            }
                         </button>
                     </form>
 
-                    {/* Divider */}
                     <div className="auth-divider"><span>or</span></div>
 
-                    {/* Register link */}
                     <p className="auth-switch">
                         Don't have an account?{' '}
                         <Link to="/register" className="auth-switch-link">Create one</Link>

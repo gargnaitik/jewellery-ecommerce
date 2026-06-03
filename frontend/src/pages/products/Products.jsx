@@ -36,7 +36,7 @@ function ProductCard({ product, goldRate }) {
         )}
         {product.tag && <span className="pc__tag">{product.tag}</span>}
         <div className="pc__overlay">
-          <button className="pc__quick" onClick={e => e.preventDefault()}>
+          <button className="pc__quick">
             Quick View
           </button>
         </div>

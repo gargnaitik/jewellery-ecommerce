@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Edit, Trash2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { getProducts } from '../../services/product.service';
 import { deleteProduct } from '../../services/admin.service';
 import { imageUrl } from '../../utils/productAdapter';
@@ -31,10 +32,11 @@ const AdminProducts = () => {
         if (window.confirm("Are you sure you want to delete this product?")) {
             try {
                 await deleteProduct(id);
+                toast.success('Product deleted successfully');
                 fetchProducts(); // Refresh list
             } catch (err) {
                 console.error("Failed to delete product", err);
-                alert("Error deleting product");
+                toast.error("Error deleting product");
             }
         }
     };

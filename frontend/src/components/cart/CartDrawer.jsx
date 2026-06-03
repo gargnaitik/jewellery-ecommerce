@@ -168,7 +168,7 @@ export default function CartDrawer() {
                   Proceed to Checkout
                   <ArrowRight size={16} />
                 </Link>
-                <button className="cart-continue-btn" onClick={closeCart}>
+                <button className="cart-continue-btn" onClick={() => { closeCart(); navigate('/products'); }}>
                   Continue Shopping
                 </button>
               </div>

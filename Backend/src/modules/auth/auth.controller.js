@@ -110,6 +110,65 @@ const verifyOTP = async (req, res) => {
     }
 };
 
+// POST /api/auth/forgot-password
+const forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email is required',
+            });
+        }
+
+        const result = await authService.forgotPasswordOTP(email.toLowerCase().trim());
+
+        res.status(200).json({
+            success: true,
+            message: result.message,
+        });
+
+    } catch (err) {
+        res.status(400).json({ success: false, message: err.message });
+    }
+};
+
+// POST /api/auth/reset-password
+const resetPassword = async (req, res) => {
+    try {
+        const { email, otp, newPassword } = req.body;
+
+        if (!email || !otp || !newPassword) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email, OTP and new password are required',
+            });
+        }
+
+        if (newPassword.length < 6) {
+            return res.status(400).json({
+                success: false,
+                message: 'Password must be at least 6 characters',
+            });
+        }
+
+        const result = await authService.resetPassword({
+            email: email.toLowerCase().trim(),
+            otp,
+            newPassword,
+        });
+
+        res.status(200).json({
+            success: true,
+            message: result.message,
+        });
+
+    } catch (err) {
+        res.status(400).json({ success: false, message: err.message });
+    }
+};
+
 // POST /api/auth/logout
 const logout = async (req, res) => {
     try {
@@ -134,11 +193,52 @@ const getMe = async (req, res) => {
     });
 };
 
+const updateMe = async (req, res) => {
+    try {
+        const { name, phone } = req.body;
+
+        const allowed = {};
+        if (name) allowed.name = name.trim();
+        if (phone) allowed.phone = phone.trim();
+
+        // prevent role escalation
+        if (req.body.role) {
+            return res.status(403).json({
+                success: false,
+                message: 'You cannot change your own role',
+            });
+        }
+
+        await req.user.update(allowed);
+
+        // return fresh user (excluding password)
+        const updated = await req.user.reload();
+
+        res.status(200).json({
+            success: true,
+            message: 'Profile updated successfully',
+            data: {
+                id: updated.id,
+                name: updated.name,
+                email: updated.email,
+                phone: updated.phone,
+                role: updated.role,
+            },
+        });
+
+    } catch (err) {
+        res.status(400).json({ success: false, message: err.message });
+    }
+};
+
 module.exports = {
     register,
     login,
     sendOTP,
     verifyOTP,
+    forgotPassword,
+    resetPassword,
     logout,
     getMe,
+    updateMe,
 };

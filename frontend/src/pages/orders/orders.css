@@ -1,6 +1,6 @@
 /* orders.css */
 .orders-page {
-  padding: 120px 5% 60px;
+  padding: 20px 5% 60px;
   min-height: 100vh;
   background-color: var(--color-bg, #0a0a0a);
   color: var(--color-text, #f4f4f4);
@@ -79,11 +79,30 @@
   letter-spacing: 0.5px;
 }
 
-.status-pending { background: rgba(255, 193, 7, 0.2); color: #ffc107; }
-.status-processing { background: rgba(23, 162, 184, 0.2); color: #17a2b8; }
-.status-shipped { background: rgba(0, 123, 255, 0.2); color: #007bff; }
-.status-delivered { background: rgba(40, 167, 69, 0.2); color: #28a745; }
-.status-cancelled { background: rgba(220, 53, 69, 0.2); color: #dc3545; }
+.status-pending {
+  background: rgba(255, 193, 7, 0.2);
+  color: #ffc107;
+}
+
+.status-processing {
+  background: rgba(23, 162, 184, 0.2);
+  color: #17a2b8;
+}
+
+.status-shipped {
+  background: rgba(0, 123, 255, 0.2);
+  color: #007bff;
+}
+
+.status-delivered {
+  background: rgba(40, 167, 69, 0.2);
+  color: #28a745;
+}
+
+.status-cancelled {
+  background: rgba(220, 53, 69, 0.2);
+  color: #dc3545;
+}
 
 .order-price-action {
   text-align: right;
@@ -171,7 +190,9 @@
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 768px) {
@@ -180,7 +201,7 @@
     align-items: flex-start;
     gap: 20px;
   }
-  
+
   .order-price-action {
     width: 100%;
     flex-direction: row;

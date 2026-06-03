@@ -4,6 +4,7 @@ const axios = require('axios');
 const redis = require('../../config/redis');
 const User = require('../users/user.model');
 const notificationService = require('../notifications/notification.service');
+const { sendForgotPasswordOTPEmail } = require('../notifications/email.service');
 
 
 // ─── Constants ────────────────────────────────────────
@@ -209,6 +210,85 @@ const verifyPhoneOTP = async ({ phone, otp, name }) => {
     };
 };
 
+// ─── FORGOT PASSWORD — send OTP to email ─────────────
+const forgotPasswordOTP = async (email) => {
+    // find user
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+        // don't reveal whether email exists — just silently succeed
+        return { message: 'If this email is registered, an OTP has been sent.' };
+    }
+
+    // rate limit: max 3 requests per 15 mins per email
+    const rateLimitKey = `forgot_limit:${email}`;
+    const attempts = await redis.get(rateLimitKey);
+    if (attempts && parseInt(attempts) >= 3) {
+        throw new Error('Too many requests. Please wait 15 minutes before trying again.');
+    }
+
+    // generate OTP
+    const otp = generateOTP();
+    const OTP_EMAIL_TTL = 600; // 10 minutes
+
+    // store OTP in Redis
+    await redis.setex(`forgot_otp:${email}`, OTP_EMAIL_TTL, otp);
+
+    // increment rate limit counter
+    await redis.setex(
+        rateLimitKey,
+        900, // 15 minute window
+        ((parseInt(attempts) || 0) + 1).toString()
+    );
+
+    // log OTP in development for convenience
+    if (process.env.NODE_ENV === 'development') {
+        console.log(`\n🔐 DEV FORGOT-PASSWORD OTP for ${email}: ${otp}\n`);
+    }
+
+    // send OTP email
+    await sendForgotPasswordOTPEmail({ name: user.name, email, otp });
+    return { message: 'If this email is registered, an OTP has been sent.' };
+};
+
+// ─── RESET PASSWORD — verify OTP + set new password ───
+const resetPassword = async ({ email, otp, newPassword }) => {
+    // get OTP from Redis
+    const storedOTP = await redis.get(`forgot_otp:${email}`);
+    if (!storedOTP) {
+        throw new Error('OTP expired or not requested. Please request a new OTP.');
+    }
+
+    // track wrong attempts
+    const attemptsKey = `forgot_otp_attempts:${email}`;
+
+    if (storedOTP !== otp.toString()) {
+        const wrongAttempts = await redis.incr(attemptsKey);
+        await redis.expire(attemptsKey, 600);
+
+        if (wrongAttempts >= MAX_OTP_ATTEMPTS) {
+            await redis.del(`forgot_otp:${email}`);
+            throw new Error('Too many wrong attempts. Please request a new OTP.');
+        }
+
+        throw new Error(`Invalid OTP. ${MAX_OTP_ATTEMPTS - wrongAttempts} attempts remaining.`);
+    }
+
+    // OTP correct — delete it
+    await redis.del(`forgot_otp:${email}`);
+    await redis.del(attemptsKey);
+
+    // find user
+    const user = await User.findOne({ where: { email } });
+    if (!user) throw new Error('User not found.');
+
+    // hash new password and save
+    const salt = await bcrypt.genSalt(10);
+    const password_hash = await bcrypt.hash(newPassword, salt);
+    await user.update({ password_hash });
+
+    return { message: 'Password reset successfully. You can now log in.' };
+};
+
 // ─── LOGOUT — blacklist token ─────────────────────────
 const logout = async (token, userId) => {
     // store token in blacklist until it expires
@@ -225,6 +305,8 @@ module.exports = {
     loginWithEmail,
     sendPhoneOTP,
     verifyPhoneOTP,
+    forgotPasswordOTP,
+    resetPassword,
     logout,
     generateToken,
 };

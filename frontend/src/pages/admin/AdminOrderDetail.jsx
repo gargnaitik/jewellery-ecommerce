@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Save } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { getOrderById } from '../../services/order.service';
 import { updateOrderStatus } from '../../services/admin.service';
 
@@ -33,14 +34,14 @@ const AdminOrderDetail = () => {
         setUpdating(true);
         try {
             await updateOrderStatus(id, status);
-            alert('Order status updated successfully!');
+            toast.success('Order status updated successfully!');
             // Refresh order
             const response = await getOrderById(id);
             const orderData = response.data.order || response.data.data || response.data;
             setOrder(orderData);
         } catch (err) {
             console.error("Failed to update status", err);
-            alert('Failed to update status.');
+            toast.error('Failed to update status.');
         } finally {
             setUpdating(false);
         }

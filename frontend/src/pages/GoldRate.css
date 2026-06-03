@@ -1,0 +1,291 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,400&family=Jost:wght@300;400;500&display=swap');
+
+/* ── Variables ──────────────────────────────────────────────────── */
+:root {
+    --gold:      #C9A55A;
+    --gold-lt:   #E2C27D;
+    --gold-dim:  #8a6e3a;
+    --bg-deep:   #0c0b09;
+    --bg-card:   #111009;
+    --text-pri:  #f0e6d3;
+    --text-mut:  #8a7d6a;
+    --border-g:  rgba(201,165,90,0.18);
+}
+
+/* ── Base ───────────────────────────────────────────────────────── */
+.gr-page {
+    background: var(--bg-deep);
+    color: var(--text-pri);
+    font-family: 'Jost', sans-serif;
+    overflow-x: hidden;
+}
+
+/* ── Hero ───────────────────────────────────────────────────────── */
+.gr-hero {
+    position: relative;
+    padding: 160px 32px 100px;
+    text-align: center;
+    overflow: hidden;
+    border-bottom: 1px solid var(--border-g);
+}
+
+.gr-hero__glow {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 70% 60% at 50% 30%, rgba(201,165,90,0.09) 0%, transparent 65%);
+    pointer-events: none;
+}
+
+.gr-hero__inner {
+    position: relative;
+    z-index: 1;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.gr-hero__label {
+    display: inline-block;
+    font-size: 10px;
+    letter-spacing: 0.38em;
+    text-transform: uppercase;
+    color: var(--gold);
+    border: 1px solid var(--border-g);
+    padding: 6px 18px;
+    margin-bottom: 24px;
+    background: rgba(201,165,90,0.05);
+}
+
+.gr-hero__title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(44px, 7vw, 80px);
+    font-weight: 700;
+    line-height: 1.05;
+    margin-bottom: 18px;
+    letter-spacing: -0.01em;
+}
+
+.gr-hero__title em { color: var(--gold-lt); font-style: italic; }
+
+.gr-hero__sub {
+    font-size: 14px;
+    font-weight: 300;
+    color: var(--text-mut);
+    margin-bottom: 48px;
+    line-height: 1.7;
+}
+
+.gr-hero__rate-card {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 40px;
+    background: rgba(201,165,90,0.05);
+    border: 1px solid var(--border-g);
+    padding: 28px 40px;
+    margin-bottom: 20px;
+    min-width: 420px;
+    flex-wrap: wrap;
+}
+
+.gr-hero__rate-label {
+    display: block;
+    font-size: 11px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--text-mut);
+    margin-bottom: 8px;
+}
+
+.gr-hero__rate-value {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(36px, 5vw, 56px);
+    font-weight: 600;
+    color: var(--gold-lt);
+    letter-spacing: 0.02em;
+}
+
+.gr-hero__change {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 20px;
+    font-weight: 500;
+    padding: 10px 20px;
+    border-radius: 4px;
+}
+
+.gr-hero__change--up   { color: #4ade80; background: rgba(74,222,128,0.08); border: 1px solid rgba(74,222,128,0.18); }
+.gr-hero__change--down { color: #f87171; background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.18); }
+
+.gr-hero__change-label { font-size: 12px; font-weight: 300; color: var(--text-mut); }
+
+.gr-hero__meta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    font-size: 12px;
+    color: var(--text-mut);
+    letter-spacing: 0.05em;
+    flex-wrap: wrap;
+}
+
+.gr-refresh-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: 1px solid var(--border-g);
+    color: var(--gold);
+    cursor: pointer;
+    padding: 6px 14px;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    transition: background .25s, color .25s;
+}
+
+.gr-refresh-btn:hover { background: rgba(201,165,90,0.08); }
+
+.gr-refresh-btn--spinning svg { animation: gr-spin 1s linear infinite; }
+@keyframes gr-spin { to { transform: rotate(360deg); } }
+
+/* ── Sections ───────────────────────────────────────────────────── */
+.gr-section { padding: 96px 0; }
+.gr-section--alt { background: var(--bg-card); border-top: 1px solid var(--border-g); border-bottom: 1px solid var(--border-g); }
+.gr-inner { max-width: 1100px; margin: 0 auto; padding: 0 32px; }
+.gr-section__label { font-size: 10px; letter-spacing: 0.38em; text-transform: uppercase; color: var(--gold); margin-bottom: 12px; }
+.gr-section__title { font-family: 'Cormorant Garamond', serif; font-size: clamp(28px, 4vw, 44px); font-weight: 700; color: var(--text-pri); margin-bottom: 10px; }
+.gr-section__sub { font-size: 14px; font-weight: 300; color: var(--text-mut); max-width: 540px; line-height: 1.75; margin-bottom: 48px; }
+
+/* ── Rate Cards ─────────────────────────────────────────────────── */
+.gr-rate-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 2px;
+    background: var(--border-g);
+}
+
+.gr-rate-card {
+    background: var(--bg-deep);
+    padding: 36px 28px;
+    position: relative;
+    transition: background .28s;
+}
+
+.gr-rate-card:hover { background: #100f0c; }
+
+.gr-rate-card--featured {
+    background: linear-gradient(160deg, #110f08 0%, #0c0b09 100%);
+    border-bottom: 2px solid var(--gold);
+}
+
+.gr-rate-card--silver { opacity: .85; }
+
+.gr-rate-card__badge {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-size: 9px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    background: var(--gold);
+    color: #0c0b09;
+    padding: 4px 10px;
+    font-weight: 500;
+}
+
+.gr-rate-card__label { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 600; margin-bottom: 6px; }
+.gr-rate-card__sub { font-size: 11px; color: var(--text-mut); letter-spacing: 0.04em; margin-bottom: 20px; }
+.gr-rate-card__price { font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 600; color: var(--gold-lt); }
+.gr-rate-card__unit { font-family: 'Jost', sans-serif; font-size: 12px; color: var(--text-mut); margin-left: 4px; font-weight: 300; }
+.gr-rate-card__change { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; margin-top: 10px; }
+.gr-rate-card__change.up   { color: #4ade80; }
+.gr-rate-card__change.down { color: #f87171; }
+
+/* ── Calculator ─────────────────────────────────────────────────── */
+.gr-calc {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    background: rgba(201,165,90,0.03);
+    border: 1px solid var(--border-g);
+    padding: 40px;
+}
+
+.gr-calc__inputs { display: flex; flex-direction: column; gap: 24px; }
+
+.gr-calc__field {}
+.gr-calc__label { display: block; font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-mut); margin-bottom: 10px; }
+
+.gr-calc__karat-grid { display: flex; gap: 8px; }
+.gr-calc__karat-btn {
+    padding: 10px 18px;
+    border: 1px solid var(--border-g);
+    background: transparent;
+    color: var(--text-mut);
+    cursor: pointer;
+    font-family: 'Jost', sans-serif;
+    font-size: 13px;
+    transition: all .22s;
+}
+.gr-calc__karat-btn.active { background: var(--gold); color: #0c0b09; border-color: var(--gold); font-weight: 500; }
+.gr-calc__karat-btn:hover:not(.active) { border-color: var(--gold-dim); color: var(--gold); }
+
+.gr-calc__input {
+    width: 100%;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border-g);
+    color: var(--text-pri);
+    font-family: 'Jost', sans-serif;
+    font-size: 15px;
+    padding: 12px 18px;
+    outline: none;
+    transition: border-color .22s;
+    box-sizing: border-box;
+}
+.gr-calc__input:focus { border-color: var(--gold-dim); background: rgba(201,165,90,0.04); }
+.gr-calc__input::placeholder { color: var(--text-mut); opacity: .5; }
+
+.gr-calc__result { border-left: 1px solid var(--border-g); padding-left: 32px; display: flex; flex-direction: column; }
+.gr-calc__result-title { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 600; margin-bottom: 24px; color: var(--gold-lt); }
+
+.gr-calc__breakdown { flex: 1; display: flex; flex-direction: column; gap: 12px; }
+.gr-calc__row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--text-mut); padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+.gr-calc__row:last-child { border-bottom: none; }
+.gr-calc__row span:last-child { color: var(--text-pri); font-weight: 500; }
+.gr-calc__row--total { font-size: 16px; color: var(--text-pri) !important; padding-top: 8px; }
+.gr-calc__row--total span:last-child { font-size: 22px; color: var(--gold-lt) !important; font-family: 'Cormorant Garamond', serif; }
+
+.gr-calc__disclaimer { margin-top: 16px; display: flex; align-items: flex-start; gap: 6px; font-size: 11px; color: var(--text-mut); line-height: 1.55; }
+
+/* ── CTA ────────────────────────────────────────────────────────── */
+.gr-cta-section { padding: 96px 0; text-align: center; }
+.gr-cta-inner { display: flex; flex-direction: column; align-items: center; gap: 20px; }
+.gr-cta__title { font-family: 'Cormorant Garamond', serif; font-size: clamp(32px, 5vw, 52px); font-weight: 700; }
+.gr-cta__title em { color: var(--gold-lt); font-style: italic; }
+.gr-cta__sub { font-size: 14px; font-weight: 300; color: var(--text-mut); max-width: 480px; line-height: 1.75; }
+.gr-cta__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+    font-size: 11.5px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    text-decoration: none;
+    background: var(--gold);
+    color: #0c0b09;
+    border: 1px solid var(--gold);
+    padding: 15px 36px;
+    font-weight: 500;
+    transition: background .25s, transform .25s;
+}
+.gr-cta__btn:hover { background: var(--gold-lt); transform: translateY(-2px); }
+
+/* ── Responsive ─────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .gr-hero__rate-card { min-width: unset; flex-direction: column; align-items: flex-start; gap: 20px; padding: 24px; }
+    .gr-calc { grid-template-columns: 1fr; }
+    .gr-calc__result { border-left: none; border-top: 1px solid var(--border-g); padding-left: 0; padding-top: 28px; margin-top: 8px; }
+    .gr-calc { padding: 24px; }
+}

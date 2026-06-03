@@ -17,3 +17,9 @@ export const getMe = () =>
 
 export const logout = () =>
     api.post('/auth/logout');
+
+export const forgotPassword = (email) =>
+    api.post('/auth/forgot-password', { email });
+
+export const resetPassword = ({ email, otp, newPassword }) =>
+    api.post('/auth/reset-password', { email, otp, newPassword });

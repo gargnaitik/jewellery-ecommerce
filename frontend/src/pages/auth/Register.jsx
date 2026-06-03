@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, User, Phone, ArrowRight, Sparkles } from 'lucide-react';
+import toast from 'react-hot-toast';
 import useAuthStore from '../../store/auth.store';
 import './Auth.css';
 
@@ -87,9 +88,12 @@ export default function Register() {
                 phone: form.phone.trim(),
                 password: form.password,
             });
+            toast.success('Account created successfully!');
             navigate('/');
         } catch (err) {
-            setApiError(err?.response?.data?.message || 'Registration failed. Please try again.');
+            const msg = err?.response?.data?.message || 'Registration failed. Please try again.';
+            setApiError(msg);
+            toast.error(msg);
         } finally {
             setLoading(false);
         }

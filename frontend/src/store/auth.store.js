@@ -7,16 +7,19 @@ const useAuthStore = create(
         (set, get) => ({
             user: null,
             token: null,
+            isAuthenticated: false,   // ← Navbar reads this
             loading: false,
             error: null,
 
-            /* ── Login ───────────────────────────────────────────── */
+            /* ── Login ─────────────────────────────────────────── */
             login: async (email, password) => {
                 set({ loading: true, error: null });
                 try {
                     const { data } = await api.post('/auth/login', { email, password });
-                    localStorage.setItem('token', data.token);
-                    set({ user: data.user, token: data.token, loading: false });
+                    // Backend: { success, message, data: { token, user } }
+                    const { token, user } = data.data;
+                    localStorage.setItem('token', token);
+                    set({ user, token, isAuthenticated: true, loading: false });
                 } catch (err) {
                     const msg = err.response?.data?.message || 'Login failed';
                     set({ error: msg, loading: false });
@@ -24,13 +27,15 @@ const useAuthStore = create(
                 }
             },
 
-            /* ── Register ────────────────────────────────────────── */
+            /* ── Register ──────────────────────────────────────── */
             register: async ({ name, email, phone, password }) => {
                 set({ loading: true, error: null });
                 try {
                     const { data } = await api.post('/auth/register', { name, email, phone, password });
-                    localStorage.setItem('token', data.token);
-                    set({ user: data.user, token: data.token, loading: false });
+                    // Backend: { success, message, data: { token, user } }
+                    const { token, user } = data.data;
+                    localStorage.setItem('token', token);
+                    set({ user, token, isAuthenticated: true, loading: false });
                 } catch (err) {
                     const msg = err.response?.data?.message || 'Registration failed';
                     set({ error: msg, loading: false });
@@ -38,28 +43,31 @@ const useAuthStore = create(
                 }
             },
 
-            /* ── Logout ──────────────────────────────────────────── */
+            /* ── Logout ────────────────────────────────────────── */
             logout: () => {
                 localStorage.removeItem('token');
-                set({ user: null, token: null, error: null });
+                set({ user: null, token: null, isAuthenticated: false, error: null });
             },
 
-            /* ── Fetch current user (/auth/me) ───────────────────── */
+            /* ── Restore session on app load (GET /auth/me) ────── */
             getMe: async () => {
                 try {
                     const { data } = await api.get('/auth/me');
-                    set({ user: data.user });
+                    // Backend: { success: true, data: req.user }
+                    set({ user: data.data, isAuthenticated: true });
                 } catch {
+                    // token expired / invalid — clear everything
                     get().logout();
                 }
             },
 
-            /* ── Update profile ──────────────────────────────────── */
+            /* ── Update profile (PUT /auth/me) ─────────────────── */
             updateProfile: async (updates) => {
                 set({ loading: true, error: null });
                 try {
                     const { data } = await api.put('/auth/me', updates);
-                    set({ user: data.user, loading: false });
+                    // Backend: { success: true, data: updatedUser }
+                    set({ user: data.data, loading: false });
                 } catch (err) {
                     const msg = err.response?.data?.message || 'Update failed';
                     set({ error: msg, loading: false });
@@ -71,8 +79,12 @@ const useAuthStore = create(
         }),
         {
             name: 'kanakam-auth',
-            // only persist token + user, not loading/error
-            partialize: (state) => ({ token: state.token, user: state.user }),
+            // persist token + user + isAuthenticated so page refresh keeps session
+            partialize: (state) => ({
+                token: state.token,
+                user: state.user,
+                isAuthenticated: state.isAuthenticated,
+            }),
         }
     )
 );

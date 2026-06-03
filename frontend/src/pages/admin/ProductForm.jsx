@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Save } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { getProductById } from '../../services/product.service';
 import { createProduct, updateProduct } from '../../services/admin.service';
 
@@ -78,15 +79,17 @@ const ProductForm = () => {
 
             if (isEditMode) {
                 await updateProduct(id, payload);
-                alert('Product updated successfully!');
+                toast.success('Product updated successfully!');
             } else {
                 await createProduct(payload);
-                alert('Product created successfully!');
+                toast.success('Product created successfully!');
             }
             navigate('/admin/products');
         } catch (err) {
             console.error('Save failed', err);
-            setError(err.response?.data?.message || 'Failed to save product.');
+            const msg = err.response?.data?.message || 'Failed to save product.';
+            setError(msg);
+            toast.error(msg);
         } finally {
             setSaving(false);
         }

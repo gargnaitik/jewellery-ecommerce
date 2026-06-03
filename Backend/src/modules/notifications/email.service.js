@@ -332,11 +332,74 @@ const sendOrderCancelledEmail = async ({ name, email, order }) => {
     });
 };
 
+// ─── Forgot Password OTP email ────────────────────────
+const sendForgotPasswordOTPEmail = async ({ name, email, otp }) => {
+    await sendEmail({
+        to: email,
+        subject: '🔐 Your Password Reset OTP — Jewellery Store',
+        html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #fff;">
+
+                <!-- Header -->
+                <div style="background: linear-gradient(135deg, #b8860b, #d4a017); padding: 32px; text-align: center; border-radius: 8px 8px 0 0;">
+                    <h1 style="color: white; margin: 0; font-size: 24px; letter-spacing: 1px;">💍 Jewellery Store</h1>
+                    <p style="color: rgba(255,255,255,0.85); margin: 8px 0 0; font-size: 14px;">Kanakam Fine Jewellery</p>
+                </div>
+
+                <!-- Body -->
+                <div style="padding: 40px 32px;">
+                    <h2 style="color: #333; margin: 0 0 8px;">Password Reset Request</h2>
+                    <p style="color: #555; font-size: 15px; line-height: 1.6; margin: 0 0 24px;">
+                        Hi ${name || 'there'}, we received a request to reset your password.
+                        Use the OTP below to continue. It is valid for <strong>10 minutes</strong>.
+                    </p>
+
+                    <!-- OTP Box -->
+                    <div style="background: #faf6ef; border: 2px dashed #b8860b; border-radius: 10px;
+                                padding: 28px; text-align: center; margin: 0 0 28px;">
+                        <p style="color: #888; font-size: 13px; margin: 0 0 12px; letter-spacing: 1px; text-transform: uppercase;">
+                            Your One-Time Password
+                        </p>
+                        <div style="font-size: 42px; font-weight: bold; letter-spacing: 10px; color: #b8860b;">
+                            ${otp}
+                        </div>
+                        <p style="color: #999; font-size: 12px; margin: 12px 0 0;">
+                            ⏱ Expires in 10 minutes
+                        </p>
+                    </div>
+
+                    <!-- Warning -->
+                    <div style="background: #fff8e1; border-left: 4px solid #f59e0b; padding: 14px 16px; border-radius: 4px; margin-bottom: 28px;">
+                        <p style="margin: 0; color: #7a5c00; font-size: 13px;">
+                            🔒 If you did not request this, please ignore this email. Your account remains secure.
+                        </p>
+                    </div>
+
+                    <p style="color: #555; font-size: 14px; line-height: 1.6;">
+                        Need help? Contact us at
+                        <a href="mailto:support@jewellery.com" style="color: #b8860b;">support@jewellery.com</a>
+                    </p>
+                </div>
+
+                <!-- Footer -->
+                <div style="background: #f9f9f9; padding: 16px 32px; text-align: center; border-radius: 0 0 8px 8px;">
+                    <p style="color: #aaa; font-size: 12px; margin: 0;">
+                        Jewellery Store — BIS Hallmarked, IGI Certified<br/>
+                        This is an automated message, please do not reply.
+                    </p>
+                </div>
+            </div>
+        `,
+        text: `Your password reset OTP is: ${otp}\nIt expires in 10 minutes.\nIf you did not request this, ignore this email.`,
+    });
+};
+
 module.exports = {
     sendWelcomeEmail,
     sendOrderConfirmationEmail,
     sendOrderShippedEmail,
     sendOrderDeliveredEmail,
-    sendOrderCancelledEmail,   // ← add this
+    sendOrderCancelledEmail,
     sendPaymentFailedEmail,
+    sendForgotPasswordOTPEmail,
 };

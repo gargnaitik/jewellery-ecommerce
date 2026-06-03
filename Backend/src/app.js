@@ -12,6 +12,7 @@ const pricingRoutes = require('./modules/pricing/pricing.routes');
 const authRoutes = require('./modules/auth/auth.routes');
 const paymentRoutes = require('./modules/payments/payment.routes');
 const orderRoutes = require('./modules/orders/order.routes');
+const adminRoutes = require('./modules/admin/admin.routes');
 
 const app = express();
 app.use(express.json());
@@ -28,6 +29,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/pricing', pricingRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

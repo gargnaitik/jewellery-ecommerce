@@ -1,9 +1,13 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Sparkles, Shield, Truck, RotateCcw } from 'lucide-react';
 import heroImg from '../assets/hero.png';
 import ringsImg from '../assets/category-rings.png';
 import necklacesImg from '../assets/category-necklaces.png';
-import './Home.css';
+import useProductStore from '../store/product.store';
+import useGoldStore from '../store/gold.store';
+import { calculateDisplayPrice } from '../utils/productAdapter';
+import './home.css';
 
 /* ── Category data ────────────────────────────────────────────── */
 const CATEGORIES = [
@@ -15,20 +19,35 @@ const CATEGORIES = [
   { label: 'Bracelets', to: '/products?category=bracelets', gradient: 'linear-gradient(135deg, #1a1710, #2a2318)' },
 ];
 
-/* ── Mock featured products (until API) ───────────────────────── */
-const FEATURED = [
-  { _id: '1', name: 'Kundan Bridal Set', metal: '22K Gold', weight: '45g', price: 324500, tag: 'Bestseller' },
-  { _id: '2', name: 'Diamond Solitaire Ring', metal: '18K Gold', weight: '4.2g', price: 87200, tag: 'New' },
-  { _id: '3', name: 'Temple Necklace', metal: '22K Gold', weight: '32g', price: 241800, tag: 'Trending' },
-  { _id: '4', name: 'Antique Jhumka Pair', metal: '22K Gold', weight: '18g', price: 136400, tag: null },
-  { _id: '5', name: 'Polki Diamond Choker', metal: '22K Gold', weight: '56g', price: 489000, tag: 'Premium' },
-  { _id: '6', name: 'Platinum Band Ring', metal: 'Platinum', weight: '6g', price: 42800, tag: 'New' },
-];
+/* ── Product card skeleton ────────────────────────────────────── */
+function ProductSkeleton() {
+  return (
+    <div className="product-card product-card--skeleton">
+      <div className="product-card__image product-card__image--skeleton" />
+      <div className="product-card__info">
+        <div className="skeleton-line skeleton-line--lg" />
+        <div className="skeleton-line skeleton-line--sm" />
+        <div className="skeleton-line skeleton-line--md" />
+      </div>
+    </div>
+  );
+}
 
 export default function Home() {
+  const { products, loading, fetchProducts } = useProductStore();
+  const { price22k } = useGoldStore();
+
+  /* Fetch 6 featured products on mount */
+  useEffect(() => {
+    fetchProducts({ limit: 6, sort: 'newest' });
+  }, []);
+
+  const featured = products.slice(0, 6);
+
   return (
     <div className="home">
-      {/* ═══ Hero Section ═══ */}
+
+      {/* ═══ Hero ═══ */}
       <section className="hero" id="hero-section">
         <div className="hero__bg">
           <img src={heroImg} alt="" className="hero__bg-img" />
@@ -36,21 +55,19 @@ export default function Home() {
         </div>
         <div className="hero__content">
           <span className="hero__label">
-            <Sparkles size={14} />
-            New Collection 2025
+            <Sparkles size={14} /> New Collection 2025
           </span>
           <h1 className="hero__title">
             Timeless Elegance,<br />
             <span className="hero__title-accent">Crafted in Gold</span>
           </h1>
           <p className="hero__subtitle">
-            Discover BIS hallmarked jewellery with live gold pricing. 
+            Discover BIS hallmarked jewellery with live gold pricing.
             Every piece tells a story of tradition and artistry.
           </p>
           <div className="hero__actions">
             <Link to="/products" className="hero__cta hero__cta--primary">
-              Explore Collections
-              <ArrowRight size={18} />
+              Explore Collections <ArrowRight size={18} />
             </Link>
             <Link to="/gold-rate" className="hero__cta hero__cta--secondary">
               Today's Gold Rate
@@ -68,13 +85,10 @@ export default function Home() {
           </div>
           <div className="categories-grid">
             {CATEGORIES.map(({ label, to, image, gradient }) => (
-              <Link to={to} key={label} className="category-card" id={`category-${label.toLowerCase()}`}>
+              <Link to={to} key={label} className="category-card">
                 <div
                   className="category-card__image"
-                  style={image
-                    ? { backgroundImage: `url(${image})` }
-                    : { background: gradient }
-                  }
+                  style={image ? { backgroundImage: `url(${image})` } : { background: gradient }}
                 >
                   <div className="category-card__overlay" />
                 </div>
@@ -100,36 +114,45 @@ export default function Home() {
               View All <ArrowRight size={14} />
             </Link>
           </div>
+
           <div className="featured-grid">
-            {FEATURED.map((product) => (
-              <Link
-                to={`/products/${product._id}`}
-                key={product._id}
-                className="product-card"
-                id={`product-card-${product._id}`}
-              >
-                <div className="product-card__image">
-                  <div className="product-card__placeholder">
-                    <Sparkles size={24} />
-                  </div>
-                  {product.tag && (
-                    <span className="product-card__tag">{product.tag}</span>
-                  )}
-                  <div className="product-card__actions-overlay">
-                    <button className="product-card__quick-btn">Quick View</button>
-                  </div>
-                </div>
-                <div className="product-card__info">
-                  <h3 className="product-card__name">{product.name}</h3>
-                  <span className="product-card__meta">
-                    {product.metal} · {product.weight}
-                  </span>
-                  <span className="product-card__price">
-                    ₹{product.price.toLocaleString('en-IN')}
-                  </span>
-                </div>
-              </Link>
-            ))}
+            {loading
+              ? Array.from({ length: 6 }).map((_, i) => <ProductSkeleton key={i} />)
+              : featured.map((product) => {
+                const price = calculateDisplayPrice(product, price22k);
+                return (
+                  <Link
+                    to={`/products/${product._id}`}
+                    key={product._id}
+                    className="product-card"
+                  >
+                    <div className="product-card__image">
+                      {product.primaryImage
+                        ? <img src={product.primaryImage} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        : <div className="product-card__placeholder"><Sparkles size={24} /></div>
+                      }
+                      {product.tag && (
+                        <span className="product-card__tag">{product.tag}</span>
+                      )}
+                      <div className="product-card__actions-overlay">
+                        <button className="product-card__quick-btn">
+                          Quick View
+                        </button>
+                      </div>
+                    </div>
+                    <div className="product-card__info">
+                      <h3 className="product-card__name">{product.name}</h3>
+                      <span className="product-card__meta">
+                        {product.metal} · {product.weight}g
+                      </span>
+                      <span className="product-card__price">
+                        ₹{Math.round(price).toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })
+            }
           </div>
         </div>
       </section>
@@ -144,12 +167,11 @@ export default function Home() {
               <span>Unforgettable</span>
             </h2>
             <p className="promo-banner__text">
-              Explore our exclusive bridal collection — handcrafted 22K gold sets 
+              Explore our exclusive bridal collection — handcrafted 22K gold sets
               with natural diamonds and precious stones.
             </p>
             <Link to="/products?occasion=wedding" className="promo-banner__cta">
-              Shop Bridal Collection
-              <ArrowRight size={16} />
+              Shop Bridal Collection <ArrowRight size={16} />
             </Link>
           </div>
           <div className="promo-banner__visual">
@@ -167,26 +189,10 @@ export default function Home() {
           </div>
           <div className="why-grid">
             {[
-              {
-                icon: <Shield size={28} />,
-                title: 'BIS Hallmarked',
-                desc: 'Every piece is BIS 916 certified, guaranteeing purity and authenticity of gold.',
-              },
-              {
-                icon: <Sparkles size={28} />,
-                title: 'Live Gold Pricing',
-                desc: 'Transparent pricing linked to live MCX gold rates, updated every 15 minutes.',
-              },
-              {
-                icon: <Truck size={28} />,
-                title: 'Insured Shipping',
-                desc: 'Free insured delivery on orders above ₹10,000 with real-time tracking.',
-              },
-              {
-                icon: <RotateCcw size={28} />,
-                title: '15-Day Returns',
-                desc: 'Hassle-free returns with full refund. No questions asked.',
-              },
+              { icon: <Shield size={28} />, title: 'BIS Hallmarked', desc: 'Every piece is BIS 916 certified, guaranteeing purity and authenticity of gold.' },
+              { icon: <Sparkles size={28} />, title: 'Live Gold Pricing', desc: 'Transparent pricing linked to live MCX gold rates, updated every 15 minutes.' },
+              { icon: <Truck size={28} />, title: 'Insured Shipping', desc: 'Free insured delivery on orders above ₹10,000 with real-time tracking.' },
+              { icon: <RotateCcw size={28} />, title: '15-Day Returns', desc: 'Hassle-free returns with full refund. No questions asked.' },
             ].map(({ icon, title, desc }) => (
               <div key={title} className="why-card">
                 <div className="why-card__icon">{icon}</div>
@@ -212,9 +218,7 @@ export default function Home() {
               className="newsletter__input"
               id="newsletter-email"
             />
-            <button type="submit" className="newsletter__btn">
-              Subscribe
-            </button>
+            <button type="submit" className="newsletter__btn">Subscribe</button>
           </form>
         </div>
       </section>

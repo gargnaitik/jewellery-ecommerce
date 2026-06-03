@@ -1,31 +1,34 @@
 import { create } from 'zustand';
 import api from '../services/api';
 
-const POLL_INTERVAL = 15 * 60 * 1000; // 15 minutes (MCX update frequency)
+const POLL_INTERVAL = 15 * 60 * 1000; // 15 minutes
 
 const useGoldStore = create((set, get) => ({
-    /* ── State ───────────────────────────────────────────────── */
+    /* ── State ─────────────────────────────────────────────── */
     price22k: 0,
     price24k: 0,
     price18k: 0,
     silverPrice: 0,
-    change: 0,       // % change from previous close
+    change: 0,
     loading: false,
     error: null,
     lastUpdated: null,
     _pollTimer: null,
 
-    /* ── Fetch rates from backend (GET /api/gold/rate) ──────── */
+    /* ── Fetch rates (GET /api/pricing/gold-rates) ─────────── */
     fetchRate: async () => {
         set({ loading: true, error: null });
         try {
             const { data } = await api.get('/pricing/gold-rates');
+            // Backend: { success: true, data: { "22K": { rate_per_gram }, "24K": {...}, "18K": {...} } }
+            const rates = data.data;
             set({
-                price22k: data.price22k,
-                price24k: data.price24k ?? data.price22k * 1.09,
-                price18k: data.price18k ?? data.price22k * 0.818,
-                silverPrice: data.silverPrice ?? 0,
-                change: data.change ?? 0,
+                price22k: rates['22K']?.rate_per_gram ?? 0,
+                price24k: rates['24K']?.rate_per_gram ?? 0,
+                price18k: rates['18K']?.rate_per_gram ?? 0,
+                price14k: rates['14K']?.rate_per_gram ?? 0,
+                silverPrice: rates['Silver']?.rate_per_gram ?? 0,
+                change: rates['22K']?.change ?? 0,
                 loading: false,
                 lastUpdated: new Date(),
             });
@@ -34,16 +37,16 @@ const useGoldStore = create((set, get) => ({
         }
     },
 
-    /* ── Start auto-polling every 15 min ────────────────────── */
+    /* ── Start auto-polling ────────────────────────────────── */
     startPolling: () => {
         const { fetchRate, _pollTimer } = get();
-        if (_pollTimer) return;                      // already polling
-        fetchRate();                                 // fetch immediately
+        if (_pollTimer) return;
+        fetchRate();
         const timer = setInterval(fetchRate, POLL_INTERVAL);
         set({ _pollTimer: timer });
     },
 
-    /* ── Stop polling ────────────────────────────────────────── */
+    /* ── Stop polling ──────────────────────────────────────── */
     stopPolling: () => {
         const { _pollTimer } = get();
         if (_pollTimer) {
@@ -52,10 +55,10 @@ const useGoldStore = create((set, get) => ({
         }
     },
 
-    /* ── Calculate price for a given weight & karat ─────────── */
+    /* ── Calculate price for weight + karat ───────────────── */
     calcPrice: (weight, karat = 22) => {
-        const { price22k, price24k, price18k } = get();
-        const rateMap = { 24: price24k, 22: price22k, 18: price18k };
+        const { price22k, price24k, price18k, price14k } = get();
+        const rateMap = { 24: price24k, 22: price22k, 18: price18k, 14: price14k };
         return (rateMap[karat] ?? price22k) * weight;
     },
 }));

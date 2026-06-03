@@ -4,6 +4,7 @@ import {
     ChevronRight, MapPin, Phone, User,
     Building2, Lock, Sparkles, CheckCircle2
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 import useCartStore from '../../store/cart.store';
 import useAuthStore from '../../store/auth.store';
@@ -109,7 +110,7 @@ function Field({ label, name, value, onChange, error, placeholder, icon, prefix,
 
 export default function Checkout() {
     const navigate = useNavigate();
-    const { items, clearCart } = useCartStore();
+    const { items, clearCart, openCart } = useCartStore();
     const { user } = useAuthStore();
 
     const [step, setStep] = useState(0);
@@ -217,6 +218,7 @@ export default function Checkout() {
 
                         /* 6 — Clear + navigate */
                         clearCart();
+                        toast.success('Order placed successfully!');
                         navigate('/order-success', {
                             state: {
                                 orderId: order.id || order._id,
@@ -226,10 +228,9 @@ export default function Checkout() {
                             },
                         });
                     } catch (err) {
-                        setApiError(
-                            err?.response?.data?.message ||
-                            'Payment received but verification failed. Please contact support.'
-                        );
+                        const msg = err?.response?.data?.message || 'Payment received but verification failed. Please contact support.';
+                        setApiError(msg);
+                        toast.error(msg);
                         setLoading(false);
                         setStep(1);
                     }
@@ -242,14 +243,18 @@ export default function Checkout() {
 
             const rzp = new window.Razorpay(options);
             rzp.on('payment.failed', (resp) => {
-                setApiError(`Payment failed: ${resp.error.description}`);
+                const msg = `Payment failed: ${resp.error.description}`;
+                setApiError(msg);
+                toast.error(msg);
                 setLoading(false);
                 setStep(1);
             });
             rzp.open();
 
         } catch (err) {
-            setApiError(err?.response?.data?.message || err?.message || 'Something went wrong.');
+            const msg = err?.response?.data?.message || err?.message || 'Something went wrong.';
+            setApiError(msg);
+            toast.error(msg);
             setLoading(false);
             setStep(1);
         }
@@ -272,7 +277,7 @@ export default function Checkout() {
                 <div className="co-breadcrumb__inner">
                     <Link to="/" className="co-bc-link">Home</Link>
                     <ChevronRight size={13} className="co-bc-sep" />
-                    <Link to="/cart" className="co-bc-link">Cart</Link>
+                    <button onClick={openCart} className="co-bc-link co-bc-btn">Cart</button>
                     <ChevronRight size={13} className="co-bc-sep" />
                     <span className="co-bc-cur">Checkout</span>
                 </div>

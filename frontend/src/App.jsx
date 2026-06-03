@@ -12,7 +12,7 @@ import CartDrawer from './components/cart/CartDrawer';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
 /* ── Pages ───────────────────────────────────────────────────── */
-import Home from './pages/Home';
+import Home from './pages/home';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import Products from './pages/products/Products';
@@ -22,6 +22,10 @@ import OrderSuccess from './pages/checkout/OrderSuccess';
 import OrderList from './pages/orders/OrderList';
 import OrderDetail from './pages/orders/OrderDetail';
 import Profile from './pages/profile/Profile';
+import GoldRate from './pages/GoldRate';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+import NotFound from './pages/NotFound';
 
 /* ── Admin Pages ─────────────────────────────────────────────── */
 import AdminRoute from './components/auth/AdminRoute';
@@ -59,6 +63,9 @@ export default function App() {
                 <Route path="/register" element={<Register />} />
                 <Route path="/products" element={<Products />} />
                 <Route path="/products/:id" element={<ProductDetail />} />
+                <Route path="/gold-rate" element={<GoldRate />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
 
                 {/* ── Protected ── */}
                 <Route path="/checkout" element={
@@ -78,7 +85,7 @@ export default function App() {
                 } />
 
                 {/* ── 404 ── */}
-                {/* <Route path="*" element={<NotFound />} /> */}
+                <Route path="*" element={<NotFound />} />
 
                 {/* ── Admin ── */}
                 <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>

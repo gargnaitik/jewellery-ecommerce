@@ -106,9 +106,9 @@ function SearchOverlay({ isOpen, onClose }) {
 /* ═══════════════════════════════════════════════════════════════
    Mega Menu Dropdown
    ═══════════════════════════════════════════════════════════════ */
-function MegaMenu({ isOpen }) {
+function MegaMenu({ isOpen, onMouseEnter, onMouseLeave }) {
   return (
-    <div className={`mega-menu ${isOpen ? 'mega-menu--open' : ''}`}>
+    <div className={`mega-menu ${isOpen ? 'mega-menu--open' : ''}`} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
       <div className="mega-menu__inner">
         {CATEGORIES.map((category) => (
           <div key={category.title} className="mega-menu__column">
@@ -228,7 +228,7 @@ export default function Navbar() {
   };
 
   const handleMegaLeave = () => {
-    megaTimeoutRef.current = setTimeout(() => setMegaOpen(false), 200);
+    megaTimeoutRef.current = setTimeout(() => setMegaOpen(false), 400);
   };
 
   const cartCount = cartItems.length;
@@ -269,7 +269,7 @@ export default function Navbar() {
                     {label}
                     {hasMega && <ChevronDown size={12} className="navbar__link-chevron" />}
                   </NavLink>
-                  {hasMega && <MegaMenu isOpen={megaOpen} />}
+                  {hasMega && <MegaMenu isOpen={megaOpen} onMouseEnter={handleMegaEnter} onMouseLeave={handleMegaLeave} />}
                 </li>
               ))}
             </ul>

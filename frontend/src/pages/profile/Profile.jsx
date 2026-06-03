@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { User, Mail, Phone, MapPin, Package, LogOut } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { getMe, logout } from '../../services/auth.service';
 import '../orders/orders.css'; // Reusing premium aesthetic css
 
@@ -27,8 +28,10 @@ const Profile = () => {
     const handleLogout = async () => {
         try {
             await logout();
+            toast.success('Logged out successfully');
         } catch (err) {
             console.error("Logout failed", err);
+            toast.error('Logout failed');
         } finally {
             localStorage.removeItem('token');
             navigate('/');
