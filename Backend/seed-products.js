@@ -33,7 +33,7 @@ const PRODUCTS = [
         is_featured: true,
         tags: ['ring', '22k', 'kundan', 'solitaire', 'gold'],
         images: [
-            { url: '', alt: 'Kundan Solitaire Ring', is_primary: true }
+            { url: '/images/products/kundan_solitaire_ring.png', alt: 'Kundan Solitaire Ring', is_primary: true }
         ],
     },
     {
@@ -57,7 +57,7 @@ const PRODUCTS = [
         is_featured: true,
         tags: ['ring', '18k', 'diamond', 'solitaire', 'engagement'],
         images: [
-            { url: '', alt: 'Diamond Solitaire Ring', is_primary: true }
+            { url: '/images/products/diamond_solitaire_ring.png', alt: 'Diamond Solitaire Ring', is_primary: true }
         ],
     },
     {
@@ -77,7 +77,7 @@ const PRODUCTS = [
         is_featured: false,
         tags: ['ring', 'platinum', 'wedding', 'band', 'unisex'],
         images: [
-            { url: '', alt: 'Platinum Wedding Band', is_primary: true }
+            { url: '/images/products/platinum_wedding_band.png', alt: 'Platinum Wedding Band', is_primary: true }
         ],
     },
     {
@@ -98,7 +98,7 @@ const PRODUCTS = [
         is_featured: false,
         tags: ['ring', '22k', 'filigree', 'traditional'],
         images: [
-            { url: '', alt: 'Filigree Gold Ring', is_primary: true }
+            { url: 'https://placehold.co/600x600?text=Filigree+Gold+Ring', alt: 'Filigree Gold Ring', is_primary: true }
         ],
     },
 
@@ -126,7 +126,7 @@ const PRODUCTS = [
         is_featured: true,
         tags: ['necklace', '22k', 'kundan', 'bridal', 'set', 'jaipur'],
         images: [
-            { url: '', alt: 'Kundan Bridal Necklace Set', is_primary: true }
+            { url: 'https://placehold.co/600x600?text=Kundan+Bridal+Necklace+Set', alt: 'Kundan Bridal Necklace Set', is_primary: true }
         ],
     },
     {
@@ -147,7 +147,7 @@ const PRODUCTS = [
         is_featured: true,
         tags: ['necklace', '22k', 'temple', 'traditional', 'antique', 'lakshmi'],
         images: [
-            { url: '', alt: 'Temple Necklace', is_primary: true }
+            { url: 'https://placehold.co/600x600?text=Temple+Necklace', alt: 'Temple Necklace', is_primary: true }
         ],
     },
     {
@@ -171,7 +171,7 @@ const PRODUCTS = [
         is_featured: true,
         tags: ['necklace', '22k', 'polki', 'diamond', 'choker', 'rajasthan', 'bridal'],
         images: [
-            { url: '', alt: 'Polki Diamond Choker', is_primary: true }
+            { url: 'https://placehold.co/600x600?text=Polki+Diamond+Choker', alt: 'Polki Diamond Choker', is_primary: true }
         ],
     },
 
@@ -197,7 +197,7 @@ const PRODUCTS = [
         is_featured: true,
         tags: ['earring', '22k', 'jhumka', 'antique', 'ruby', 'festival'],
         images: [
-            { url: '', alt: 'Antique Jhumka Pair', is_primary: true }
+            { url: 'https://placehold.co/600x600?text=Antique+Jhumka+Pair', alt: 'Antique Jhumka Pair', is_primary: true }
         ],
     },
     {
@@ -221,7 +221,7 @@ const PRODUCTS = [
         is_featured: false,
         tags: ['earring', '18k', 'pearl', 'drop', 'elegant'],
         images: [
-            { url: '', alt: 'Pearl Drop Earrings', is_primary: true }
+            { url: 'https://placehold.co/600x600?text=Pearl+Drop+Earrings', alt: 'Pearl Drop Earrings', is_primary: true }
         ],
     },
 
@@ -245,7 +245,7 @@ const PRODUCTS = [
         is_featured: true,
         tags: ['bangle', '22k', 'kada', 'solid', 'traditional'],
         images: [
-            { url: '', alt: 'Gold Kada Bangle', is_primary: true }
+            { url: 'https://placehold.co/600x600?text=Gold+Kada+Bangle', alt: 'Gold Kada Bangle', is_primary: true }
         ],
     },
 
@@ -271,7 +271,7 @@ const PRODUCTS = [
         is_featured: true,
         tags: ['bracelet', '18k', 'diamond', 'tennis', 'luxury'],
         images: [
-            { url: '', alt: 'Diamond Tennis Bracelet', is_primary: true }
+            { url: 'https://placehold.co/600x600?text=Diamond+Tennis+Bracelet', alt: 'Diamond Tennis Bracelet', is_primary: true }
         ],
     },
 
@@ -297,7 +297,7 @@ const PRODUCTS = [
         is_featured: false,
         tags: ['pendant', '22k', 'emerald', 'meenakari', 'coloured stone'],
         images: [
-            { url: '', alt: 'Emerald Pendant', is_primary: true }
+            { url: 'https://placehold.co/600x600?text=Emerald+Pendant', alt: 'Emerald Pendant', is_primary: true }
         ],
     },
 ];

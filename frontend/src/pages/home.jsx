@@ -1,22 +1,26 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Sparkles, Shield, Truck, RotateCcw } from 'lucide-react';
+import { ArrowRight, Sparkles, Shield, Truck, RotateCcw, Images } from 'lucide-react';
 import heroImg from '../assets/hero.png';
 import ringsImg from '../assets/category-rings.png';
+import earingsImg from '../assets/category-earings.png';
+import banglesImg from '../assets/category-bangles.png';
+import pendentsImg from '../assets/category-pendant.png';
 import necklacesImg from '../assets/category-necklaces.png';
+import braceletsImg from '../assets/category-bracelet.png';
 import useProductStore from '../store/product.store';
 import useGoldStore from '../store/gold.store';
-import { calculateDisplayPrice } from '../utils/productAdapter';
+import { calculateDisplayPrice, imageUrl } from '../utils/productAdapter';
 import './home.css';
 
 /* ── Category data ────────────────────────────────────────────── */
 const CATEGORIES = [
   { label: 'Rings', to: '/products?category=rings', image: ringsImg },
   { label: 'Necklaces', to: '/products?category=necklaces', image: necklacesImg },
-  { label: 'Earrings', to: '/products?category=earrings', gradient: 'linear-gradient(135deg, #1a1710, #2a2318)' },
-  { label: 'Bangles', to: '/products?category=bangles', gradient: 'linear-gradient(135deg, #1a1710, #2a2318)' },
-  { label: 'Pendants', to: '/products?category=pendants', gradient: 'linear-gradient(135deg, #1a1710, #2a2318)' },
-  { label: 'Bracelets', to: '/products?category=bracelets', gradient: 'linear-gradient(135deg, #1a1710, #2a2318)' },
+  { label: 'Earrings', to: '/products?category=earrings', image: earingsImg },
+  { label: 'Bangles', to: '/products?category=bangles', image: banglesImg },
+  { label: 'Pendants', to: '/products?category=pendants', image: pendentsImg },
+  { label: 'Bracelets', to: '/products?category=bracelets', image: braceletsImg },
 ];
 
 /* ── Product card skeleton ────────────────────────────────────── */
