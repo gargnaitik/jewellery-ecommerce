@@ -52,6 +52,11 @@ const notifyOrderShipped = async (user, order) => {
 // ─── On order delivered ───────────────────────────────
 const notifyOrderDelivered = async (user, order) => {
     await Promise.allSettled([
+        user.email && emailService.sendOrderDeliveredEmail({
+            name: user.name,
+            email: user.email,
+            order,
+        }),
         user.phone && smsService.sendOrderDeliveredSMS({
             name: user.name,
             phone: user.phone,
