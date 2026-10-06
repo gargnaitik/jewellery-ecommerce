@@ -1,7 +1,8 @@
 /**
  * seed-admin.js
  * Creates an admin user in PostgreSQL
- * Run: node seed-admin.js
+ * Run: ADMIN_EMAIL=you@example.com ADMIN_PASSWORD='a-strong-password' node seed-admin.js
+ * (or set them in .env). Credentials are never hardcoded — the repo is public.
  */
 
 require('dotenv').config();
@@ -10,12 +11,17 @@ const { connectPostgres, sequelize } = require('./src/config/db');
 const User = require('./src/modules/users/user.model');
 
 const ADMIN = {
-    name: 'Kanakam Admin',
-    email: 'admin@kanakam.in',
-    phone: '9000000000',       // change this
-    password: 'Admin@123',        // change this after first login
+    name: process.env.ADMIN_NAME || 'Kanakam Admin',
+    email: process.env.ADMIN_EMAIL?.toLowerCase().trim(),
+    phone: process.env.ADMIN_PHONE || null,
+    password: process.env.ADMIN_PASSWORD,
     role: 'admin',
 };
+
+if (!ADMIN.email || !ADMIN.password || ADMIN.password.length < 12) {
+    console.error('\n❌ Set ADMIN_EMAIL and ADMIN_PASSWORD (12+ characters) in the environment.\n');
+    process.exit(1);
+}
 
 const seed = async () => {
     try {
@@ -32,7 +38,7 @@ const seed = async () => {
         }
 
         // Hash password
-        const salt = await bcrypt.genSalt(10);
+        const salt = await bcrypt.genSalt(12);
         const password_hash = await bcrypt.hash(ADMIN.password, salt);
 
         // Create admin user
@@ -51,7 +57,6 @@ const seed = async () => {
         console.log(`   Name:     ${admin.name}`);
         console.log(`   Email:    ${admin.email}`);
         console.log(`   Phone:    ${admin.phone}`);
-        console.log(`   Password: ${ADMIN.password}  ← change after first login`);
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
         process.exit(0);
