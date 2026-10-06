@@ -107,13 +107,20 @@ const deleteProduct = async (id) => {
 
 // ─── Update stock ─────────────────────────────────────
 const updateStock = async (id, quantity) => {
-    const product = await Product.findByIdAndUpdate(
-        id,
+    // for a decrement, only match if enough stock is left — never go negative
+    const filter = quantity < 0
+        ? { _id: id, stock: { $gte: -quantity } }
+        : { _id: id };
+
+    const product = await Product.findOneAndUpdate(
+        filter,
         { $inc: { stock: quantity } },  // increment or decrement
         { new: true }
     );
-    if (!product) throw new Error('Product not found');
-    if (product.stock < 0) throw new Error('Insufficient stock');
+    if (!product) {
+        const exists = await Product.exists({ _id: id });
+        throw new Error(exists ? 'Insufficient stock' : 'Product not found');
+    }
     return product;
 };
 

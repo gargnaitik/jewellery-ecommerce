@@ -16,6 +16,36 @@ const KARAT_PURITY = {
     14: 0.583,
 };
 
+// ─── Price breakdown for a piece of jewellery ─────────
+// pure function — the single source of truth for the pricing formula,
+// shared by the price API and checkout
+const computePrice = ({
+    net_weight,
+    goldRate,
+    making_charges = 0,
+    stone_value = 0,
+    quantity = 1,
+}) => {
+    const goldValue = Math.round(net_weight * goldRate * quantity);
+    const makingCharges = Math.round(making_charges * quantity);
+    const stoneValue = Math.round(stone_value * quantity);
+    const subtotal = goldValue + makingCharges + stoneValue;
+    const gst = Math.round(subtotal * GST_RATE);
+
+    return {
+        gold_value: goldValue,
+        making_charges: makingCharges,
+        stone_value: stoneValue,
+        subtotal,
+        gst_amount: gst,
+        final_price: subtotal + gst,
+    };
+};
+
+// sum of all gemstone/diamond prices on a product
+const stoneTotal = (stones = []) =>
+    stones.reduce((total, stone) => total + (stone.price || 0), 0);
+
 // ─── Fetch live gold rate ─────────────────────────────
 const getLiveGoldRate = async (karat = 22) => {
 
@@ -128,22 +158,12 @@ const calculateProductPrice = async (productId) => {
     const goldRateData = await getLiveGoldRate(product.karat);
     const goldRate = goldRateData.rate;
 
-    // calculate gold value
-    const goldValue = Math.round(product.net_weight * goldRate);
-
-    // calculate stone/diamond value
-    const stoneValue = product.stones?.reduce((total, stone) => {
-        return total + (stone.price || 0);
-    }, 0) || 0;
-
-    // subtotal before GST
-    const subtotal = goldValue + product.making_charges + stoneValue;
-
-    // GST 3% on subtotal
-    const gst = Math.round(subtotal * GST_RATE);
-
-    // final price
-    const finalPrice = subtotal + gst;
+    const price = computePrice({
+        net_weight: product.net_weight,
+        goldRate,
+        making_charges: product.making_charges,
+        stone_value: stoneTotal(product.stones),
+    });
 
     return {
         product_id: productId,
@@ -152,13 +172,8 @@ const calculateProductPrice = async (productId) => {
         karat: product.karat,
         net_weight: product.net_weight,
         gold_rate: goldRate,
-        gold_value: goldValue,
-        making_charges: product.making_charges,
-        stone_value: stoneValue,
-        subtotal,
+        ...price,
         gst_rate: `${GST_RATE * 100}%`,
-        gst_amount: gst,
-        final_price: finalPrice,
         gold_rate_source: goldRateData.source,
         calculated_at: new Date(),
     };
@@ -178,22 +193,14 @@ const calculateCustomPrice = async ({
 
     const goldRateData = await getLiveGoldRate(karat);
     const goldRate = goldRateData.rate;
-    const goldValue = Math.round(net_weight * goldRate);
-    const subtotal = goldValue + making_charges + stone_value;
-    const gst = Math.round(subtotal * GST_RATE);
-    const finalPrice = subtotal + gst;
+    const price = computePrice({ net_weight, goldRate, making_charges, stone_value });
 
     return {
         karat,
         net_weight,
         gold_rate: goldRate,
-        gold_value: goldValue,
-        making_charges,
-        stone_value,
-        subtotal,
+        ...price,
         gst_rate: `${GST_RATE * 100}%`,
-        gst_amount: gst,
-        final_price: finalPrice,
         gold_rate_source: goldRateData.source,
         calculated_at: new Date(),
     };
@@ -215,6 +222,10 @@ const refreshGoldRateCache = async () => {
 };
 
 module.exports = {
+    GST_RATE,
+    KARAT_PURITY,
+    computePrice,
+    stoneTotal,
     getLiveGoldRate,
     getAllGoldRates,
     calculateProductPrice,

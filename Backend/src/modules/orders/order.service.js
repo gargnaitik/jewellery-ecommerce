@@ -7,12 +7,37 @@ const notificationService = require('../notifications/notification.service');
 const User = require('../users/user.model');
 
 
+const MAX_QUANTITY_PER_ITEM = 10;
+
+// ─── Reserve stock atomically ─────────────────────────
+// the stock check and the decrement happen in one MongoDB operation,
+// so two buyers can never both take the last piece
+const reserveStock = async (productId, quantity) => {
+    return Product.findOneAndUpdate(
+        { _id: productId, is_active: true, stock: { $gte: quantity } },
+        { $inc: { stock: -quantity } },
+        { new: true }
+    );
+};
+
+const releaseStock = async (reserved) => {
+    await Promise.all(reserved.map(({ product_id, quantity }) =>
+        Product.findByIdAndUpdate(product_id, { $inc: { stock: quantity } })
+    ));
+};
+
 // ─── Create order (checkout) ──────────────────────────
 const createOrder = async ({ userId, items, shipping_address }) => {
 
     // items = [{ product_id, quantity }]
-    if (!items || items.length === 0) {
+    if (!Array.isArray(items) || items.length === 0) {
         throw new Error('Order must have at least one item');
+    }
+    for (const item of items) {
+        const qty = item.quantity;
+        if (!Number.isInteger(qty) || qty < 1 || qty > MAX_QUANTITY_PER_ITEM) {
+            throw new Error(`Quantity must be a whole number between 1 and ${MAX_QUANTITY_PER_ITEM}`);
+        }
     }
 
     // fetch all gold rates once — used for all items
@@ -29,34 +54,31 @@ const createOrder = async ({ userId, items, shipping_address }) => {
         const product = await Product.findById(item.product_id);
         if (!product) throw new Error(`Product ${item.product_id} not found`);
         if (!product.is_active) throw new Error(`Product ${product.name} is no longer available`);
-        if (product.stock < item.quantity) {
-            throw new Error(`Insufficient stock for ${product.name}`);
-        }
 
         // get gold rate for this product's karat
-        const rateKey = `${product.karat}K`;
-        const goldRate = goldRates[rateKey]?.rate_per_gram || 6870;
+        const goldRate = goldRates[`${product.karat}K`]?.rate_per_gram;
+        if (!goldRate) throw new Error(`No gold rate available for ${product.karat}K`);
 
-        // calculate price
-        const goldValue = Math.round(product.net_weight * goldRate * item.quantity);
-        const makingCharges = Math.round(product.making_charges * item.quantity);
-        const stoneValue = product.stones?.reduce((t, s) => t + (s.price || 0), 0) * item.quantity || 0;
-        const itemSubtotal = goldValue + makingCharges + stoneValue;
-        const gstAmount = Math.round(itemSubtotal * 0.03);
-        const itemTotal = itemSubtotal + gstAmount;
+        const price = pricingService.computePrice({
+            net_weight: product.net_weight,
+            goldRate,
+            making_charges: product.making_charges,
+            stone_value: pricingService.stoneTotal(product.stones),
+            quantity: item.quantity,
+        });
 
-        subtotal += itemSubtotal;
-        totalGst += gstAmount;
+        subtotal += price.subtotal;
+        totalGst += price.gst_amount;
 
         calculatedItems.push({
             product_id: item.product_id,
             quantity: item.quantity,
             gold_rate_used: goldRate,
-            gold_value: goldValue,
-            making_charges: makingCharges,
-            stone_value: stoneValue,
-            gst_amount: gstAmount,
-            item_total: itemTotal,
+            gold_value: price.gold_value,
+            making_charges: price.making_charges,
+            stone_value: price.stone_value,
+            gst_amount: price.gst_amount,
+            item_total: price.final_price,
 
             // snapshot product at purchase time
             product_snapshot: {
@@ -74,48 +96,47 @@ const createOrder = async ({ userId, items, shipping_address }) => {
 
     const totalAmount = subtotal + totalGst;
 
-    // use PostgreSQL transaction
-    // either ALL of this saves or NONE of it does
-    const order = await sequelize.transaction(async (t) => {
-
-        // 1. create order
-        const newOrder = await Order.create({
-            user_id: userId,
-            subtotal,
-            gst_amount: totalGst,
-            total_amount: totalAmount,
-            shipping_address,
-            gold_rate_snapshot: goldRates, // snapshot ALL rates
-            status: 'pending',
-            payment_status: 'pending',
-        }, { transaction: t });
-
-        // 2. create order items
-        const orderItems = calculatedItems.map(item => ({
-            ...item,
-            order_id: newOrder.id,
-        }));
-
-        await OrderItem.bulkCreate(orderItems, { transaction: t });
-
-        // 3. reduce stock in MongoDB
-        for (const item of items) {
-            await Product.findByIdAndUpdate(
-                item.product_id,
-                { $inc: { stock: -item.quantity } }
-            );
+    // 1. reserve stock in MongoDB — if any item is short, release what we took
+    const reserved = [];
+    try {
+        for (const item of calculatedItems) {
+            const updated = await reserveStock(item.product_id, item.quantity);
+            if (!updated) {
+                throw new Error(`Insufficient stock for ${item.product_snapshot.name}`);
+            }
+            reserved.push(item);
         }
-        // fetch user for notification
-        const user = await User.findByPk(userId);
 
-        // send order confirmation
-        await notificationService.notifyOrderPlaced(user, newOrder);
+        // 2. PostgreSQL transaction — order and items save together or not at all
+        const order = await sequelize.transaction(async (t) => {
+            const newOrder = await Order.create({
+                user_id: userId,
+                subtotal,
+                gst_amount: totalGst,
+                total_amount: totalAmount,
+                shipping_address,
+                gold_rate_snapshot: goldRates, // snapshot ALL rates
+                status: 'pending',
+                payment_status: 'pending',
+            }, { transaction: t });
 
-        return newOrder;
-    });
+            await OrderItem.bulkCreate(
+                calculatedItems.map(item => ({ ...item, order_id: newOrder.id })),
+                { transaction: t }
+            );
 
-    // fetch order with items
-    return await getOrderById(order.id);
+            return newOrder;
+        });
+
+        // order confirmation is sent once payment is verified, not here
+
+        return await getOrderById(order.id);
+
+    } catch (err) {
+        // compensate: the Postgres transaction rolled back, so put the stock back
+        await releaseStock(reserved);
+        throw err;
+    }
 };
 
 // ─── Get order by ID ──────────────────────────────────
@@ -164,6 +185,7 @@ const updateOrderStatus = async (orderId, status, extra = {}) => {
         ]
     });
     if (!order) throw new Error('Order not found');
+    if (order.status === 'cancelled') throw new Error('Order is already cancelled');
 
     const updates = { status };
 
@@ -179,13 +201,7 @@ const updateOrderStatus = async (orderId, status, extra = {}) => {
         updates.cancel_reason = extra.cancel_reason;
 
         // restore stock when cancelled
-        const items = await OrderItem.findAll({ where: { order_id: orderId } });
-        for (const item of items) {
-            await Product.findByIdAndUpdate(
-                item.product_id,
-                { $inc: { stock: item.quantity } }
-            );
-        }
+        await releaseStock(order.items);
     }
 
     // update order
