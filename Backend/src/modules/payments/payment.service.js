@@ -6,11 +6,18 @@ const OrderItem = require('../orders/orderItem.model');
 const notificationService = require('../notifications/notification.service');
 const User = require('../users/user.model');
 
-// initialize Razorpay instance
-const razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID,
-    key_secret: process.env.RAZORPAY_KEY_SECRET,
-});
+// Razorpay client is created on first use, so the server (and tests)
+// can start without payment keys configured
+let razorpayClient = null;
+const razorpay = () => {
+    if (!razorpayClient) {
+        razorpayClient = new Razorpay({
+            key_id: process.env.RAZORPAY_KEY_ID,
+            key_secret: process.env.RAZORPAY_KEY_SECRET,
+        });
+    }
+    return razorpayClient;
+};
 
 // ─── Initiate payment ─────────────────────────────────
 const initiatePayment = async (orderId, userId) => {
@@ -31,7 +38,7 @@ const initiatePayment = async (orderId, userId) => {
 
     // create Razorpay order
     // amount must be in paise (₹1 = 100 paise)
-    const razorpayOrder = await razorpay.orders.create({
+    const razorpayOrder = await razorpay().orders.create({
         amount: Math.round(order.total_amount * 100),
         currency: 'INR',
         receipt: `receipt_${orderId}`,
@@ -138,7 +145,7 @@ const verifyPayment = async ({
     }
 
     // Step 2 — fetch payment details from Razorpay
-    const razorpayPayment = await razorpay.payments.fetch(razorpay_payment_id);
+    const razorpayPayment = await razorpay().payments.fetch(razorpay_payment_id);
 
     // Step 3 — update payment record
     await Payment.update(
@@ -195,7 +202,7 @@ const refundPayment = async (orderId, amount) => {
         ? Math.round(amount * 100)
         : Math.round(payment.amount * 100); // full refund if no amount
 
-    const refund = await razorpay.payments.refund(
+    const refund = await razorpay().payments.refund(
         payment.razorpay_payment_id,
         { amount: refundAmount }
     );

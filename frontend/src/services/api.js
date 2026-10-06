@@ -20,9 +20,13 @@ api.interceptors.request.use(
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response?.status === 401) {
+        // a wrong password on the login/register forms is also a 401 —
+        // let those pages show the error instead of reloading
+        const isAuthForm = /\/auth\/(login|register|verify-otp)$/.test(error.config?.url || '');
+        if (error.response?.status === 401 && !isAuthForm) {
             localStorage.removeItem('token');
-            window.location.href = '/login';
+            localStorage.removeItem('kanakam-auth');
+            if (window.location.pathname !== '/login') window.location.href = '/login';
         }
         return Promise.reject(error);
     }

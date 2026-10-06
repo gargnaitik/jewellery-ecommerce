@@ -45,6 +45,8 @@ const useAuthStore = create(
 
             /* ── Logout ────────────────────────────────────────── */
             logout: () => {
+                // blacklist the token server-side (Redis) — fire and forget
+                if (get().token) api.post('/auth/logout').catch(() => {});
                 localStorage.removeItem('token');
                 set({ user: null, token: null, isAuthenticated: false, error: null });
             },
