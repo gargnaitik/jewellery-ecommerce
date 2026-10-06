@@ -7,6 +7,7 @@
 require('dotenv').config();
 const connectMongo = require('./src/config/mongo');
 const Product = require('./src/modules/products/product.model');
+const { refreshProductPrices } = require('./src/modules/pricing/pricing.service');
 
 // ── Making charges are flat ₹ amounts (not percentages) ──────
 // Formula backend uses: goldValue + making_charges + stoneValue + 3% GST
@@ -337,6 +338,10 @@ const seed = async () => {
         console.log(`   Created: ${created}`);
         console.log(`   Skipped: ${skipped}`);
         console.log(`   Total in DB: ${await Product.countDocuments()}`);
+
+        // store live prices now rather than waiting for the server's pricing job
+        const { updated } = await refreshProductPrices();
+        console.log(`   Priced:  ${updated} products from the current gold rate`);
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
         process.exit(0);

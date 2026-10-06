@@ -1,36 +1,67 @@
 /**
- * seed-images-retry.js
- * Re-runs only the 6 failed products with simpler Unsplash queries
- * Run: node seed-images-retry.js
+ * seed-images.js
+ * Gives every product a real photo: searches Unsplash, uploads the image to
+ * Cloudinary (800×800, auto quality/format) and saves it on the product.
+ *
+ * Run:   node seed-images.js           — products still on placeholder/local images
+ *        node seed-images.js --force   — re-fetch photos for every product
+ *
+ * Needs MONGO_URI, UNSPLASH_ACCESS_KEY and the CLOUDINARY_* variables.
  */
 
 require('dotenv').config();
-const fetch = require('node-fetch');
 const streamifier = require('streamifier');
 const cloudinary = require('./src/config/cloudinary');
 const connectMongo = require('./src/config/mongo');
 const Product = require('./src/modules/products/product.model');
 
 const UNSPLASH_KEY = process.env.UNSPLASH_ACCESS_KEY;
+const FORCE = process.argv.includes('--force');
 
-/* ── Only the 6 that failed — simpler queries ────────────────── */
-const RETRY_QUERIES = {
-    'GN-22K-001': 'gold necklace women'
+// hand-picked searches for the seeded catalogue; anything else falls back
+// to "<metal> <category> jewelry"
+const QUERIES = {
+    'RNG-22K-001': 'kundan ring jewelry',
+    'RNG-18K-001': 'diamond solitaire ring',
+    'RNG-PT-001': 'platinum wedding band',
+    'RNG-22K-002': 'gold filigree ring',
+    'NCK-22K-001': 'kundan bridal necklace',
+    'NCK-22K-002': 'temple jewellery gold necklace',
+    'NCK-22K-003': 'diamond choker necklace',
+    'EAR-22K-001': 'jhumka earrings',
+    'EAR-18K-001': 'pearl drop earrings',
+    'BNG-22K-001': 'gold bangle',
+    'BRC-18K-001': 'diamond tennis bracelet',
+    'PND-22K-001': 'emerald pendant necklace',
 };
-const getUnsplashUrl = async (query) => {
+
+const queryFor = (product) =>
+    QUERIES[product.sku] || `${product.metal_type} ${product.category} jewelry`;
+
+// a product needs a photo if it has none, or only placeholders / local paths
+const needsPhoto = (product) =>
+    FORCE || !product.images?.some((img) => img.url?.includes('res.cloudinary.com'));
+
+const searchUnsplash = async (query) => {
     const res = await fetch(
         `https://api.unsplash.com/photos/random?query=${encodeURIComponent(query)}&orientation=squarish&content_filter=high`,
         { headers: { Authorization: `Client-ID ${UNSPLASH_KEY}` } }
     );
     if (!res.ok) throw new Error(`Unsplash ${res.status} for "${query}"`);
-    const data = await res.json();
-    return { url: data.urls.regular, photographer: data.user.name };
+    const photo = await res.json();
+
+    // Unsplash API guidelines: report the download when a photo is used
+    fetch(photo.links.download_location, {
+        headers: { Authorization: `Client-ID ${UNSPLASH_KEY}` },
+    }).catch(() => {});
+
+    return { url: photo.urls.regular, photographer: photo.user.name };
 };
 
 const downloadBuffer = async (url) => {
     const res = await fetch(url);
     if (!res.ok) throw new Error(`Download failed ${res.status}`);
-    return res.buffer();
+    return Buffer.from(await res.arrayBuffer());
 };
 
 const uploadToCloudinary = (buffer, sku) => {
@@ -52,38 +83,41 @@ const uploadToCloudinary = (buffer, sku) => {
 };
 
 const seed = async () => {
+    const missing = ['UNSPLASH_ACCESS_KEY', 'CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET']
+        .filter((name) => !process.env[name]);
+    if (missing.length) {
+        console.error(`\n❌ Missing environment variables: ${missing.join(', ')}\n`);
+        process.exit(1);
+    }
+
     await connectMongo();
-    console.log('\n🔁 Retrying 6 failed images...\n');
+
+    const products = (await Product.find({ is_active: true })).filter(needsPhoto);
+    console.log(`\n📸 Fetching photos for ${products.length} product(s)...\n`);
 
     let ok = 0, fail = 0;
 
-    for (const [sku, query] of Object.entries(RETRY_QUERIES)) {
+    for (const product of products) {
+        const query = queryFor(product);
         try {
-            process.stdout.write(`📸 ${sku} — "${query}"... `);
+            process.stdout.write(`   ${product.sku} — "${query}"... `);
 
-            const { url: imgUrl, photographer } = await getUnsplashUrl(query);
-            const buffer = await downloadBuffer(imgUrl);
-            const result = await uploadToCloudinary(buffer, sku);
+            const { url, photographer } = await searchUnsplash(query);
+            const result = await uploadToCloudinary(await downloadBuffer(url), product.sku);
 
-            await Product.findOneAndUpdate(
-                { sku },
-                {
-                    $set: {
-                        images: [{
-                            url: result.secure_url,
-                            public_id: result.public_id,
-                            alt: `${sku} — photo by ${photographer}`,
-                            is_primary: true,
-                        }],
-                    },
-                }
-            );
+            product.images = [{
+                url: result.secure_url,
+                public_id: result.public_id,
+                alt: `${product.name} — photo by ${photographer} on Unsplash`,
+                is_primary: true,
+            }];
+            await product.save();
 
-            console.log(`✅`);
-            console.log(`   └─ ${result.secure_url}`);
+            console.log('✅');
             ok++;
 
-            await new Promise(r => setTimeout(r, 1500));
+            // stay well inside Unsplash's demo limit (50 requests/hour)
+            await new Promise((r) => setTimeout(r, 1500));
         } catch (err) {
             console.log(`❌ ${err.message}`);
             fail++;
@@ -91,10 +125,10 @@ const seed = async () => {
     }
 
     console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log(`✅ Retry done! ${ok} uploaded, ${fail} failed`);
-    if (fail > 0) console.log('   Run again — Unsplash random results vary each call');
+    console.log(`✅ Done: ${ok} uploaded, ${fail} failed`);
+    if (fail > 0) console.log('   Run again to retry the failed ones');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
     process.exit(0);
 };
 
-seed().catch(err => { console.error('Fatal:', err.message); process.exit(1); });    
+seed().catch((err) => { console.error('Fatal:', err.message); process.exit(1); });

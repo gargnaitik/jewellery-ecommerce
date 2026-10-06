@@ -109,6 +109,7 @@ const productSchema = new mongoose.Schema({
     // ─── Images ───────────────────────────────────────
     images: [{
         url: String,
+        public_id: String,   // Cloudinary id — needed to delete the file later
         alt: String,
         is_primary: {
             type: Boolean,
