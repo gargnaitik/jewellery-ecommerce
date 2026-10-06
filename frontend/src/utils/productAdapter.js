@@ -82,12 +82,20 @@ export const normalizeProduct = (product = {}) => {
     };
 };
 
-export const calculateDisplayPrice = (product, goldRate = 0) => {
+// ₹/gram for a karat, from the gold store ({ price14k, price18k, ... })
+export const rateForKarat = (rates = {}, karat = 22) =>
+    rates[`price${karat}k`] || rates.price22k || 0;
+
+// The backend stores the live price (incl. GST) in base_price and refreshes it
+// with the gold rate — the same figure checkout charges. The local formula is
+// only a fallback for products the pricing job hasn't reached yet.
+export const calculateDisplayPrice = (product, rates = {}) => {
     const item = normalizeProduct(product);
     if (item.base_price > 0) return item.base_price;
 
+    const goldRate = rateForKarat(rates, item.karat);
     const stoneValue = item.stones?.reduce((total, stone) => total + Number(stone.price || 0), 0) || 0;
     const goldValue = item.metal_type === 'gold' ? item.net_weight * goldRate : 0;
-    const subtotal = goldValue + item.making_charges + stoneValue;
-    return subtotal + subtotal * 0.03;
+    const subtotal = Math.round(goldValue) + Math.round(item.making_charges) + Math.round(stoneValue);
+    return subtotal + Math.round(subtotal * 0.03);
 };

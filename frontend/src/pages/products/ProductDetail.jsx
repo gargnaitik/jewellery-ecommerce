@@ -7,7 +7,7 @@ import {
 import useCartStore from '../../store/cart.store';
 import useGoldStore from '../../store/gold.store';
 import useProductStore from '../../store/product.store';
-import { calculateDisplayPrice, imageUrl } from '../../utils/productAdapter';
+import { calculateDisplayPrice, imageUrl, rateForKarat } from '../../utils/productAdapter';
 import './ProductDetail.css';
 
 const fmt = (n) => '₹' + Math.round(n).toLocaleString('en-IN');
@@ -15,7 +15,7 @@ const fmt = (n) => '₹' + Math.round(n).toLocaleString('en-IN');
 export default function ProductDetail() {
     const { id } = useParams();
     const { addItem } = useCartStore();
-    const { price18k, price22k, price24k } = useGoldStore();
+    const goldRates = useGoldStore();
     const { product, products, loading, error, fetchProduct, fetchProducts, clearProduct } = useProductStore();
 
     const [activeImg, setActiveImg] = useState(0);
@@ -55,8 +55,7 @@ export default function ProductDetail() {
         );
     }
 
-    const rateMap = { 18: price18k, 22: price22k, 24: price24k };
-    const goldRate = rateMap[product.karat] || price22k;
+    const goldRate = rateForKarat(goldRates, product.karat);
     const images = product.images?.length ? product.images : [null];
     const related = products.filter((item) => item._id !== product._id).slice(0, 4);
 
@@ -66,7 +65,7 @@ export default function ProductDetail() {
     const stoneValue = product.stones?.reduce((sum, stone) => sum + Number(stone.price || 0), 0) || 0;
     const subtotal = goldValue + makingAmt + stoneValue;
     const gstAmt = subtotal * 0.03;
-    const totalPrice = calculateDisplayPrice(product, goldRate);
+    const totalPrice = calculateDisplayPrice(product, goldRates);
 
     const handleAddToCart = () => {
         addItem({
@@ -290,7 +289,7 @@ export default function ProductDetail() {
                                 <div className="pd-rc__info">
                                     <span className="pd-rc__name">{p.name}</span>
                                     <span className="pd-rc__meta">{p.metal} · {p.weight}g</span>
-                                    <span className="pd-rc__price">{fmt(calculateDisplayPrice(p, price22k))}</span>
+                                    <span className="pd-rc__price">{fmt(calculateDisplayPrice(p, goldRates))}</span>
                                 </div>
                             </Link>
                         ))}

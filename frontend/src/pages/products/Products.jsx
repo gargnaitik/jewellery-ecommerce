@@ -23,8 +23,8 @@ const SORT_OPTIONS = [
 const fmt = (n) => '₹' + n.toLocaleString('en-IN');
 
 /* ── Product Card ────────────────────────────────────────────── */
-function ProductCard({ product, goldRate }) {
-  const price = calculateDisplayPrice(product, goldRate);
+function ProductCard({ product, goldRates }) {
+  const price = calculateDisplayPrice(product, goldRates);
 
   return (
     <Link to={`/products/${product._id}`} className="pc">
@@ -139,7 +139,7 @@ function SidebarContent({
 export default function Products() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { products, totalCount, loading, error, fetchProducts } = useProductStore();
-  const { price22k } = useGoldStore();
+  const goldRates = useGoldStore();
 
   const [search, setSearch] = useState(searchParams.get('search') || '');
   const [category, setCategory] = useState(searchParams.get('category') || 'All');
@@ -305,7 +305,7 @@ export default function Products() {
 
           {!loading && !error && products.length > 0 ? (
             <div className="products-grid">
-              {products.map(p => <ProductCard key={p._id} product={p} goldRate={price22k} />)}
+              {products.map(p => <ProductCard key={p._id} product={p} goldRates={goldRates} />)}
             </div>
           ) : !loading && !error && (
             <div className="empty-state">

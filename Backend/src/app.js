@@ -13,6 +13,7 @@ const authRoutes = require('./modules/auth/auth.routes');
 const paymentRoutes = require('./modules/payments/payment.routes');
 const orderRoutes = require('./modules/orders/order.routes');
 const adminRoutes = require('./modules/admin/admin.routes');
+const { startPriceRefreshJob } = require('./modules/pricing/pricing.service');
 
 const app = express();
 app.use(express.json());
@@ -50,6 +51,9 @@ const start = async () => {
             console.log(`🚀 Server running on http://localhost:${PORT}`);
             console.log(`🔍 Health: http://localhost:${PORT}/health`);
         });
+
+        // keep stored product prices in step with the live gold rate
+        startPriceRefreshJob();
 
     } catch (err) {
         console.error('❌ Failed to start:', err.message);

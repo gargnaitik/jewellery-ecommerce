@@ -64,7 +64,10 @@ const productSchema = new mongoose.Schema({
     // ─── Pricing ──────────────────────────────────────
     base_price: {
         type: Number,
-        default: 0,     // calculated dynamically from gold rate
+        default: 0,     // live price incl. GST — recomputed from the gold rate by the pricing job
+    },
+    price_updated_at: {
+        type: Date,
     },
     discount_percent: {
         type: Number,
@@ -139,6 +142,7 @@ const productSchema = new mongoose.Schema({
 productSchema.index({ name: 'text', tags: 'text' });
 productSchema.index({ category: 1, metal_type: 1 });
 productSchema.index({ is_active: 1 });
+productSchema.index({ is_active: 1, base_price: 1 });   // price filter + sort
 
 const Product = mongoose.model('Product', productSchema);
 

@@ -39,7 +39,7 @@ function ProductSkeleton() {
 
 export default function Home() {
   const { products, loading, fetchProducts } = useProductStore();
-  const { price22k } = useGoldStore();
+  const goldRates = useGoldStore();
 
   /* Fetch 6 featured products on mount */
   useEffect(() => {
@@ -123,7 +123,7 @@ export default function Home() {
             {loading
               ? Array.from({ length: 6 }).map((_, i) => <ProductSkeleton key={i} />)
               : featured.map((product) => {
-                const price = calculateDisplayPrice(product, price22k);
+                const price = calculateDisplayPrice(product, goldRates);
                 return (
                   <Link
                     to={`/products/${product._id}`}

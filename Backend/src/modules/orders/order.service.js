@@ -55,17 +55,9 @@ const createOrder = async ({ userId, items, shipping_address }) => {
         if (!product) throw new Error(`Product ${item.product_id} not found`);
         if (!product.is_active) throw new Error(`Product ${product.name} is no longer available`);
 
-        // get gold rate for this product's karat
-        const goldRate = goldRates[`${product.karat}K`]?.rate_per_gram;
-        if (!goldRate) throw new Error(`No gold rate available for ${product.karat}K`);
-
-        const price = pricingService.computePrice({
-            net_weight: product.net_weight,
-            goldRate,
-            making_charges: product.making_charges,
-            stone_value: pricingService.stoneTotal(product.stones),
-            quantity: item.quantity,
-        });
+        // same pricing helper as the catalogue, so the shown price is the charged price
+        const price = pricingService.priceProduct(product, goldRates, item.quantity);
+        const goldRate = price.gold_rate;
 
         subtotal += price.subtotal;
         totalGst += price.gst_amount;

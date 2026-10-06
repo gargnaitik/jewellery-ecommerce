@@ -1,4 +1,19 @@
 const Product = require('./product.model');
+const pricingService = require('../pricing/pricing.service');
+
+// price is derived from the gold rate — never accept it from the client
+const stripComputedFields = ({ base_price, price_updated_at, ...rest }) => rest;
+
+// store the live price on a product; a pricing hiccup shouldn't block the save,
+// the background job will fill it in on its next run
+const withLivePrice = async (product) => {
+    try {
+        return await pricingService.refreshProductPrice(product);
+    } catch (err) {
+        console.error(`Could not price product ${product._id}:`, err.message);
+        return product;
+    }
+};
 
 // ─── Create product ───────────────────────────────────
 const createProduct = async (productData) => {
@@ -7,8 +22,8 @@ const createProduct = async (productData) => {
     const existing = await Product.findOne({ sku: productData.sku });
     if (existing) throw new Error('Product with this SKU already exists');
 
-    const product = await Product.create(productData);
-    return product;
+    const product = await Product.create(stripComputedFields(productData));
+    return withLivePrice(product);
 };
 
 // ─── Get all products with filters ───────────────────
@@ -87,11 +102,11 @@ const getProductBySku = async (sku) => {
 const updateProduct = async (id, updates) => {
     const product = await Product.findByIdAndUpdate(
         id,
-        { $set: updates },
+        { $set: stripComputedFields(updates) },
         { new: true, runValidators: true }  // returns updated doc
     );
     if (!product) throw new Error('Product not found');
-    return product;
+    return withLivePrice(product);
 };
 
 // ─── Delete product (soft delete) ────────────────────
