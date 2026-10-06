@@ -39,19 +39,21 @@ const computePrice = ({
     stone_value = 0,
     quantity = 1,
 }) => {
-    const goldValue = Math.round(net_weight * goldRate * quantity);
-    const makingCharges = Math.round(making_charges * quantity);
-    const stoneValue = Math.round(stone_value * quantity);
+    // price one unit in whole rupees first, then multiply — so the checkout
+    // total always equals the listed unit price × quantity
+    const goldValue = Math.round(net_weight * goldRate);
+    const makingCharges = Math.round(making_charges);
+    const stoneValue = Math.round(stone_value);
     const subtotal = goldValue + makingCharges + stoneValue;
     const gst = Math.round(subtotal * GST_RATE);
 
     return {
-        gold_value: goldValue,
-        making_charges: makingCharges,
-        stone_value: stoneValue,
-        subtotal,
-        gst_amount: gst,
-        final_price: subtotal + gst,
+        gold_value: goldValue * quantity,
+        making_charges: makingCharges * quantity,
+        stone_value: stoneValue * quantity,
+        subtotal: subtotal * quantity,
+        gst_amount: gst * quantity,
+        final_price: (subtotal + gst) * quantity,
     };
 };
 
