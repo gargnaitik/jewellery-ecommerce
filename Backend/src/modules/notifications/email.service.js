@@ -1,10 +1,17 @@
 const nodemailer = require('nodemailer');
+const axios = require('axios');
+
+// Two transports:
+// - Brevo HTTP API when BREVO_API_KEY is set — works on hosts that block
+//   outbound SMTP ports (e.g. Render's free tier)
+// - SMTP via Nodemailer otherwise (Gmail app password, Mailtrap, ...)
+const useBrevo = Boolean(process.env.BREVO_API_KEY);
 
 // ─── Create transporter ───────────────────────────────
 const transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST,
     port: process.env.EMAIL_PORT,
-    secure: false,   // true for port 465
+    secure: Number(process.env.EMAIL_PORT) === 465,
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASSWORD,
@@ -12,21 +19,51 @@ const transporter = nodemailer.createTransport({
 });
 
 // ─── Verify connection ────────────────────────────────
-transporter.verify((err, success) => {
-    if (err) console.error('❌ Email service error:', err.message);
-    else console.log('✅ Email service ready');
-});
+if (!useBrevo && process.env.EMAIL_HOST && process.env.NODE_ENV !== 'test') {
+    transporter.verify((err) => {
+        if (err) console.error('❌ Email service error:', err.message);
+        else console.log('✅ Email service ready');
+    });
+}
+
+// "Name <email@x.com>" -> { name, email } for the Brevo API
+const parseFrom = (from = '') => {
+    const match = from.match(/^\s*"?([^"<]*)"?\s*<([^>]+)>\s*$/);
+    return match
+        ? { name: match[1].trim(), email: match[2].trim() }
+        : { email: from.trim() };
+};
+
+const sendViaBrevo = async ({ to, subject, html, text }) => {
+    const { data } = await axios.post(
+        'https://api.brevo.com/v3/smtp/email',
+        {
+            sender: parseFrom(process.env.EMAIL_FROM),
+            to: [{ email: to }],
+            subject,
+            htmlContent: html,
+            ...(text && { textContent: text }),
+        },
+        {
+            headers: { 'api-key': process.env.BREVO_API_KEY },
+            timeout: 10000,
+        }
+    );
+    return { messageId: data.messageId };
+};
 
 // ─── Send raw email ───────────────────────────────────
 const sendEmail = async ({ to, subject, html, text }) => {
     try {
-        const info = await transporter.sendMail({
-            from: process.env.EMAIL_FROM,
-            to,
-            subject,
-            html,
-            text,
-        });
+        const info = useBrevo
+            ? await sendViaBrevo({ to, subject, html, text })
+            : await transporter.sendMail({
+                from: process.env.EMAIL_FROM,
+                to,
+                subject,
+                html,
+                text,
+            });
         console.log(`✅ Email sent to ${to}: ${info.messageId}`);
         return info;
     } catch (err) {
