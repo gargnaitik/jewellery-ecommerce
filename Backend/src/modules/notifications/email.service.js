@@ -332,6 +332,32 @@ const sendOrderCancelledEmail = async ({ name, email, order }) => {
     });
 };
 
+// ─── Email verification ───────────────────────────────
+const sendVerificationEmail = async ({ name, email, link }) => {
+    await sendEmail({
+        to: email,
+        subject: '💍 Verify your email — Kanakam Fine Jewellery',
+        html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #b8860b;">Welcome, ${name}! 💍</h2>
+                <p>Thank you for joining Kanakam Fine Jewellery. Please confirm your email address to secure your account.</p>
+                <a href="${link}"
+                   style="background: #b8860b; color: white; padding: 12px 24px;
+                          text-decoration: none; border-radius: 4px; display: inline-block;">
+                   Verify Email
+                </a>
+                <p style="color: #666; font-size: 13px; margin-top: 24px;">
+                    This link expires in 24 hours and can be used once. If you didn't create an account, you can ignore this email.
+                </p>
+                <p style="color: #888; margin-top: 32px; font-size: 12px;">
+                    Kanakam Fine Jewellery — BIS Hallmarked, IGI Certified
+                </p>
+            </div>
+        `,
+        text: `Welcome, ${name}! Verify your email: ${link} (expires in 24 hours)`,
+    });
+};
+
 // ─── Forgot Password OTP email ────────────────────────
 const sendForgotPasswordOTPEmail = async ({ name, email, otp }) => {
     await sendEmail({
@@ -402,4 +428,5 @@ module.exports = {
     sendOrderCancelledEmail,
     sendPaymentFailedEmail,
     sendForgotPasswordOTPEmail,
+    sendVerificationEmail,
 };

@@ -88,7 +88,7 @@ export default function Register() {
                 phone: form.phone.trim(),
                 password: form.password,
             });
-            toast.success('Account created successfully!');
+            toast.success('Account created! Check your inbox to verify your email.');
             navigate('/');
         } catch (err) {
             const msg = err?.response?.data?.message || 'Registration failed. Please try again.';

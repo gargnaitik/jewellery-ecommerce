@@ -169,6 +169,30 @@ const resetPassword = async (req, res) => {
     }
 };
 
+// POST /api/auth/verify-email
+const verifyEmail = async (req, res) => {
+    try {
+        const result = await authService.verifyEmail(req.body.token);
+        res.status(200).json({
+            success: true,
+            message: result.message,
+            data: result.user,
+        });
+    } catch (err) {
+        res.status(400).json({ success: false, message: err.message });
+    }
+};
+
+// POST /api/auth/resend-verification
+const resendVerification = async (req, res) => {
+    try {
+        const result = await authService.resendEmailVerification(req.user);
+        res.status(200).json({ success: true, message: result.message });
+    } catch (err) {
+        res.status(400).json({ success: false, message: err.message });
+    }
+};
+
 // POST /api/auth/logout
 const logout = async (req, res) => {
     try {
@@ -223,6 +247,7 @@ const updateMe = async (req, res) => {
                 email: updated.email,
                 phone: updated.phone,
                 role: updated.role,
+                is_verified: updated.is_verified,
             },
         });
 
@@ -238,6 +263,8 @@ module.exports = {
     verifyOTP,
     forgotPassword,
     resetPassword,
+    verifyEmail,
+    resendVerification,
     logout,
     getMe,
     updateMe,

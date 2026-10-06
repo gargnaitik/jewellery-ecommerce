@@ -4,14 +4,35 @@ const jwt = require('jsonwebtoken');
 const axios = require('axios');
 const redis = require('../../config/redis');
 const User = require('../users/user.model');
-const notificationService = require('../notifications/notification.service');
-const { sendForgotPasswordOTPEmail } = require('../notifications/email.service');
+const {
+    sendForgotPasswordOTPEmail,
+    sendVerificationEmail,
+} = require('../notifications/email.service');
 
 
 // ─── Constants ────────────────────────────────────────
 const OTP_TTL = 300;   // 5 minutes in seconds
 const MAX_OTP_ATTEMPTS = 3; // max wrong attempts before lockout
 const BCRYPT_SALT_ROUNDS = 12;
+const EMAIL_VERIFY_TTL = 24 * 60 * 60;  // verification links live 24 hours
+const MAX_VERIFY_EMAILS_PER_HOUR = 3;
+
+// ─── Shape returned to the client ─────────────────────
+const toPublicUser = (user) => ({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone,
+    role: user.role,
+    is_verified: user.is_verified,
+});
+
+const normalizeEmail = (email) => email.toLowerCase().trim();
+
+// SHA-256 of the raw token — only the hash is stored, so a Redis dump
+// can't be used to verify accounts
+const hashToken = (token) =>
+    crypto.createHash('sha256').update(token).digest('hex');
 
 // ─── Generate JWT token ───────────────────────────────
 const generateToken = (userId, role) => {
@@ -47,8 +68,58 @@ const sendOTP = async (phone, otp) => {
     }
 };
 
+// ─── Email verification ──────────────────────────────
+// a random 256-bit token goes out in the link; Redis keeps only its
+// SHA-256 hash, mapped to the user id, with a 24 hour TTL
+const sendEmailVerification = async (user) => {
+    const token = crypto.randomBytes(32).toString('hex');
+    await redis.setex(`email_verify:${hashToken(token)}`, EMAIL_VERIFY_TTL, user.id);
+
+    const link = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
+    if (process.env.NODE_ENV === 'development') {
+        console.log(`\n✉️  DEV verification link for ${user.email}: ${link}\n`);
+    }
+    await sendVerificationEmail({ name: user.name, email: user.email, link });
+};
+
+const verifyEmail = async (token) => {
+    if (!token || typeof token !== 'string') {
+        throw new Error('Verification token is required');
+    }
+
+    const key = `email_verify:${hashToken(token)}`;
+    const userId = await redis.get(key);
+    if (!userId) throw new Error('Verification link is invalid or has expired');
+
+    const user = await User.findByPk(userId);
+    if (!user) throw new Error('User not found');
+
+    await user.update({ is_verified: true });
+    await redis.del(key);  // single use
+
+    return { message: 'Email verified successfully', user: toPublicUser(user) };
+};
+
+const resendEmailVerification = async (user) => {
+    if (!user.email) throw new Error('No email address on this account');
+    if (user.is_verified) throw new Error('Email is already verified');
+
+    // rate limit: max 3 verification emails per hour per user
+    const rateLimitKey = `verify_limit:${user.id}`;
+    const sent = await redis.incr(rateLimitKey);
+    if (sent === 1) await redis.expire(rateLimitKey, 3600);
+    if (sent > MAX_VERIFY_EMAILS_PER_HOUR) {
+        throw new Error('Too many verification emails. Please try again in an hour.');
+    }
+
+    await sendEmailVerification(user);
+    return { message: 'Verification email sent' };
+};
+
 // ─── REGISTER with email + password ──────────────────
 const registerWithEmail = async ({ name, email, password, phone }) => {
+    email = normalizeEmail(email);
+    phone = phone?.trim() || null;  // empty string would clash on the unique index
 
     // check existing email
     const existingEmail = await User.findOne({ where: { email } });
@@ -70,30 +141,24 @@ const registerWithEmail = async ({ name, email, password, phone }) => {
         email,
         phone,
         password_hash,
-        is_verified: true,  // email users verified immediately
+        is_verified: false,  // set once they click the emailed link
     });
-    await notificationService.notifyUserRegistered(user);
+
+    // the verification email doubles as the welcome email
+    await sendEmailVerification(user);
+
     // generate token
     const token = generateToken(user.id, user.role);
 
-    return {
-        token,
-        user: {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            phone: user.phone,
-            role: user.role,
-        }
-    };
+    return { token, user: toPublicUser(user) };
 };
 
 // ─── LOGIN with email + password ─────────────────────
 const loginWithEmail = async ({ email, password }) => {
 
-    // find user with password
-    const user = await User.findOne({ where: { email } });
-    if (!user) throw new Error('Invalid email or password');
+    // find user with password (phone-only accounts have no password)
+    const user = await User.findOne({ where: { email: normalizeEmail(email) } });
+    if (!user || !user.password_hash) throw new Error('Invalid email or password');
 
     // check password
     const isMatch = await bcrypt.compare(password, user.password_hash);
@@ -104,13 +169,7 @@ const loginWithEmail = async ({ email, password }) => {
 
     return {
         token,
-        user: {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            phone: user.phone,
-            role: user.role,
-        }
+        user: toPublicUser(user),
     };
 };
 
@@ -201,13 +260,7 @@ const verifyPhoneOTP = async ({ phone, otp, name }) => {
     return {
         token,
         is_new_user: isNewUser,
-        user: {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            phone: user.phone,
-            role: user.role,
-        }
+        user: toPublicUser(user),
     };
 };
 
@@ -302,6 +355,9 @@ const logout = async (token, userId) => {
 };
 
 module.exports = {
+    hashToken,
+    verifyEmail,
+    resendEmailVerification,
     registerWithEmail,
     loginWithEmail,
     sendPhoneOTP,

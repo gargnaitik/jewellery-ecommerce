@@ -10,9 +10,11 @@ router.post('/send-otp', authController.sendOTP);
 router.post('/verify-otp', authController.verifyOTP);
 router.post('/forgot-password', authController.forgotPassword);
 router.post('/reset-password', authController.resetPassword);
+router.post('/verify-email', authController.verifyEmail);
 
 // protected routes — token required
 router.post('/logout', protect, authController.logout);
+router.post('/resend-verification', protect, authController.resendVerification);
 router.get('/me', protect, authController.getMe);
 router.put('/me', protect, authController.updateMe);
 

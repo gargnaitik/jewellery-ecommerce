@@ -21,5 +21,11 @@ export const logout = () =>
 export const forgotPassword = (email) =>
     api.post('/auth/forgot-password', { email });
 
+export const verifyEmail = (token) =>
+    api.post('/auth/verify-email', { token });
+
+export const resendVerification = () =>
+    api.post('/auth/resend-verification');
+
 export const resetPassword = ({ email, otp, newPassword }) =>
     api.post('/auth/reset-password', { email, otp, newPassword });

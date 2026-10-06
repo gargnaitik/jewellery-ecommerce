@@ -25,6 +25,7 @@ import Profile from './pages/profile/Profile';
 import GoldRate from './pages/GoldRate';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import VerifyEmail from './pages/auth/VerifyEmail';
 import NotFound from './pages/NotFound';
 
 /* ── Admin Pages ─────────────────────────────────────────────── */
@@ -66,6 +67,7 @@ export default function App() {
                 <Route path="/gold-rate" element={<GoldRate />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/verify-email" element={<VerifyEmail />} />
 
                 {/* ── Protected ── */}
                 <Route path="/checkout" element={

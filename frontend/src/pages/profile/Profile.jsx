@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { User, Mail, Phone, MapPin, Package, LogOut } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Package, LogOut, ShieldCheck, ShieldAlert } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { getMe, logout } from '../../services/auth.service';
+import { getMe, logout, resendVerification } from '../../services/auth.service';
 import '../orders/orders.css'; // Reusing premium aesthetic css
 
 const Profile = () => {
     const navigate = useNavigate();
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [resending, setResending] = useState(false);
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -40,6 +41,18 @@ const Profile = () => {
         }
     };
 
+    const handleResend = async () => {
+        setResending(true);
+        try {
+            const { data } = await resendVerification();
+            toast.success(data.message || 'Verification email sent');
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Could not send verification email');
+        } finally {
+            setResending(false);
+        }
+    };
+
     if (loading) {
         return (
             <div className="orders-page">
@@ -68,8 +81,8 @@ const Profile = () => {
                                 <User size={32} />
                             </div>
                             <div>
-                                <h2 className="text-xl font-semibold">{user.first_name} {user.last_name}</h2>
-                                <p className="text-sm text-gray-400">Premium Member</p>
+                                <h2 className="text-xl font-semibold">{user.name}</h2>
+                                <p className="text-sm text-gray-400">{user.role === 'admin' ? 'Administrator' : 'Premium Member'}</p>
                             </div>
                         </div>
 
@@ -92,16 +105,10 @@ const Profile = () => {
                     <div className="bg-[#19191999] border border-white/5 rounded-xl p-6 backdrop-blur-md">
                         <h3 className="text-lg font-semibold mb-6 flex items-center gap-2"><User size={20} className="text-[#d4af37]" /> Personal Information</h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                            <div>
-                                <label className="block text-sm text-gray-400 mb-1">First Name</label>
+                            <div className="sm:col-span-2">
+                                <label className="block text-sm text-gray-400 mb-1">Full Name</label>
                                 <div className="p-3 bg-black/40 border border-white/10 rounded-lg text-white">
-                                    {user.first_name || 'N/A'}
-                                </div>
-                            </div>
-                            <div>
-                                <label className="block text-sm text-gray-400 mb-1">Last Name</label>
-                                <div className="p-3 bg-black/40 border border-white/10 rounded-lg text-white">
-                                    {user.last_name || 'N/A'}
+                                    {user.name || 'N/A'}
                                 </div>
                             </div>
                             <div>
@@ -110,12 +117,28 @@ const Profile = () => {
                                     <Mail size={16} className="text-gray-500" />
                                     {user.email || 'N/A'}
                                 </div>
+                                {user.email && (user.is_verified ? (
+                                    <p className="mt-2 text-xs text-green-400 flex items-center gap-1">
+                                        <ShieldCheck size={14} /> Verified
+                                    </p>
+                                ) : (
+                                    <p className="mt-2 text-xs text-amber-400 flex items-center gap-2">
+                                        <ShieldAlert size={14} /> Not verified
+                                        <button
+                                            onClick={handleResend}
+                                            disabled={resending}
+                                            className="text-[#d4af37] hover:underline disabled:opacity-50"
+                                        >
+                                            {resending ? 'Sending…' : 'Resend link'}
+                                        </button>
+                                    </p>
+                                ))}
                             </div>
                             <div>
                                 <label className="block text-sm text-gray-400 mb-1">Phone Number</label>
                                 <div className="p-3 bg-black/40 border border-white/10 rounded-lg flex items-center gap-2 text-white">
                                     <Phone size={16} className="text-gray-500" />
-                                    {user.phone_number || 'Not provided'}
+                                    {user.phone || 'Not provided'}
                                 </div>
                             </div>
                         </div>

@@ -75,6 +75,8 @@ const useAuthStore = create(
                 }
             },
 
+            setUser: (user) => set({ user }),
+
             clearError: () => set({ error: null }),
         }),
         {
