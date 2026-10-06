@@ -71,6 +71,20 @@ const initiatePayment = async (orderId, userId) => {
     };
 };
 
+// ─── Check Razorpay signature ─────────────────────────
+// HMAC-SHA256 of "order_id|payment_id" with the key secret,
+// compared in constant time so the check can't be timed
+const isValidSignature = (razorpay_order_id, razorpay_payment_id, razorpay_signature) => {
+    const expected = crypto
+        .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+        .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+        .digest('hex');
+
+    const a = Buffer.from(expected, 'utf8');
+    const b = Buffer.from(String(razorpay_signature), 'utf8');
+    return a.length === b.length && crypto.timingSafeEqual(a, b);
+};
+
 // ─── Verify payment ───────────────────────────────────
 // called after user completes payment on Razorpay UI
 const verifyPayment = async ({
@@ -78,17 +92,27 @@ const verifyPayment = async ({
     razorpay_payment_id,
     razorpay_signature,
     orderId,
+    userId,
 }) => {
 
+    // Step 0 — the Razorpay order must belong to this order and this user,
+    // otherwise a signature from a cheap order could mark another order paid
+    const ownedOrder = await Order.findByPk(orderId);
+    if (!ownedOrder) throw new Error('Order not found');
+    if (ownedOrder.user_id !== userId) throw new Error('Not authorized');
+    if (ownedOrder.razorpay_order_id !== razorpay_order_id) {
+        throw new Error('Payment does not match this order');
+    }
+    if (ownedOrder.payment_status === 'paid') {
+        return {
+            success: true,
+            order_id: orderId,
+            message: 'Payment already verified',
+        };
+    }
+
     // Step 1 — verify signature
-    const body = razorpay_order_id + '|' + razorpay_payment_id;
-
-    const expectedSignature = crypto
-        .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
-        .update(body)
-        .digest('hex');
-
-    const isValid = expectedSignature === razorpay_signature;
+    const isValid = isValidSignature(razorpay_order_id, razorpay_payment_id, razorpay_signature);
 
     if (!isValid) {
         // signature mismatch — payment tampered or fake
@@ -209,6 +233,7 @@ const getPaymentByOrderId = async (orderId) => {
 
 module.exports = {
     initiatePayment,
+    isValidSignature,
     verifyPayment,
     refundPayment,
     getPaymentByOrderId,

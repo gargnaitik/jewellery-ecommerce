@@ -66,7 +66,7 @@ const calculateCustomPrice = async (req, res) => {
     }
 };
 
-// POST /api/pricing/refresh — force refresh cache (admin only later)
+// POST /api/pricing/refresh — force refresh cache (admin only)
 const refreshCache = async (req, res) => {
     try {
         const rates = await pricingService.refreshGoldRateCache();

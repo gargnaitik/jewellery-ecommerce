@@ -19,7 +19,7 @@ const User = sequelize.define('User', {
     phone: {
         type: DataTypes.STRING(15),
         unique: true,
-        allowNull: false,
+        allowNull: true,      // optional for email signups
     },
     password_hash: {          // stores ONLY hashed password
         type: DataTypes.STRING,

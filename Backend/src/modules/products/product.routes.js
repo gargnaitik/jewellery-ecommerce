@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const productController = require('./product.controller');
 const { protect, adminOnly } = require('../auth/auth.middleware');
-// ─── Paste these routes into product.routes.js ────────────────
+const Product = require('./product.model');
 const upload = require('../../middleware/upload.middleware');
 const imageService = require('./image.service');
 

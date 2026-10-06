@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const axios = require('axios');
@@ -9,8 +10,8 @@ const { sendForgotPasswordOTPEmail } = require('../notifications/email.service')
 
 // ─── Constants ────────────────────────────────────────
 const OTP_TTL = 300;   // 5 minutes in seconds
-const OTP_LENGTH = 6;
 const MAX_OTP_ATTEMPTS = 3; // max wrong attempts before lockout
+const BCRYPT_SALT_ROUNDS = 12;
 
 // ─── Generate JWT token ───────────────────────────────
 const generateToken = (userId, role) => {
@@ -22,10 +23,9 @@ const generateToken = (userId, role) => {
 };
 
 // ─── Generate random OTP ──────────────────────────────
+// crypto.randomInt is a CSPRNG, unlike Math.random
 const generateOTP = () => {
-    return Math.floor(
-        100000 + Math.random() * 900000  // always 6 digits
-    ).toString();
+    return crypto.randomInt(100000, 1000000).toString();  // always 6 digits
 };
 
 // ─── Send OTP via MSG91 ───────────────────────────────
@@ -61,7 +61,7 @@ const registerWithEmail = async ({ name, email, password, phone }) => {
     }
 
     // hash password
-    const salt = await bcrypt.genSalt(10);
+    const salt = await bcrypt.genSalt(BCRYPT_SALT_ROUNDS);
     const password_hash = await bcrypt.hash(password, salt);
 
     // create user
@@ -180,8 +180,9 @@ const verifyPhoneOTP = async ({ phone, otp, name }) => {
 
     // find or create user
     let user = await User.findOne({ where: { phone } });
+    const isNewUser = !user;
 
-    if (!user) {
+    if (isNewUser) {
         // new user — register them
         if (!name) throw new Error('Name is required for new users');
         user = await User.create({
@@ -199,7 +200,7 @@ const verifyPhoneOTP = async ({ phone, otp, name }) => {
 
     return {
         token,
-        is_new_user: !user,
+        is_new_user: isNewUser,
         user: {
             id: user.id,
             name: user.name,
@@ -282,7 +283,7 @@ const resetPassword = async ({ email, otp, newPassword }) => {
     if (!user) throw new Error('User not found.');
 
     // hash new password and save
-    const salt = await bcrypt.genSalt(10);
+    const salt = await bcrypt.genSalt(BCRYPT_SALT_ROUNDS);
     const password_hash = await bcrypt.hash(newPassword, salt);
     await user.update({ password_hash });
 

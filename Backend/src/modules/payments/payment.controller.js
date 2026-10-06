@@ -50,6 +50,7 @@ const verifyPayment = async (req, res) => {
             razorpay_payment_id,
             razorpay_signature,
             orderId: order_id,
+            userId: req.user.id,
         });
 
         res.status(200).json({
@@ -93,6 +94,15 @@ const getPayment = async (req, res) => {
         const payment = await paymentService.getPaymentByOrderId(
             req.params.orderId
         );
+
+        // user can only see payments for their own orders
+        if (payment.order?.user_id !== req.user.id && req.user.role !== 'admin') {
+            return res.status(403).json({
+                success: false,
+                message: 'Not authorized to view this payment',
+            });
+        }
+
         res.status(200).json({ success: true, data: payment });
     } catch (err) {
         res.status(404).json({ success: false, message: err.message });
