@@ -35,8 +35,11 @@ const QUERIES = {
     'PND-22K-001': 'emerald pendant necklace',
 };
 
-const queryFor = (product) =>
-    QUERIES[product.sku] || `${product.metal_type} ${product.category} jewelry`;
+const fallbackQuery = (product) => `${product.metal_type} ${product.category} jewelry`;
+
+// specific search first, then the broader one if Unsplash finds nothing
+const queriesFor = (product) =>
+    [...new Set([QUERIES[product.sku], fallbackQuery(product)].filter(Boolean))];
 
 // a product needs a photo if it has none, or only placeholders / local paths
 const needsPhoto = (product) =>
@@ -47,6 +50,7 @@ const searchUnsplash = async (query) => {
         `https://api.unsplash.com/photos/random?query=${encodeURIComponent(query)}&orientation=squarish&content_filter=high`,
         { headers: { Authorization: `Client-ID ${UNSPLASH_KEY}` } }
     );
+    if (res.status === 404) return null;   // no photo matches this search
     if (!res.ok) throw new Error(`Unsplash ${res.status} for "${query}"`);
     const photo = await res.json();
 
@@ -98,11 +102,17 @@ const seed = async () => {
     let ok = 0, fail = 0;
 
     for (const product of products) {
-        const query = queryFor(product);
         try {
+            let photo = null;
+            let query;
+            for (query of queriesFor(product)) {
+                photo = await searchUnsplash(query);
+                if (photo) break;
+            }
             process.stdout.write(`   ${product.sku} — "${query}"... `);
+            if (!photo) throw new Error('no matching photo on Unsplash');
 
-            const { url, photographer } = await searchUnsplash(query);
+            const { url, photographer } = photo;
             const result = await uploadToCloudinary(await downloadBuffer(url), product.sku);
 
             product.images = [{
