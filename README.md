@@ -8,6 +8,10 @@
 ![Data](https://img.shields.io/badge/data-PostgreSQL%20%7C%20MongoDB%20%7C%20Redis-red)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
+### 🌐 [Live demo](https://kanakam-fine-jewellery.vercel.app)
+
+Payments run in **Razorpay test mode** — no real money moves. Pay with card `4111 1111 1111 1111` (any future expiry, any CVV) or UPI `success@razorpay`. The API is on a free tier, so the first request after a while can take up to a minute to wake up.
+
 ---
 
 ## Contents
