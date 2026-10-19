@@ -8,7 +8,8 @@ jest.mock('../src/modules/orders/orderItem.model', () => ({}));
 jest.mock('../src/modules/payments/payment.model', () => ({}));
 jest.mock('../src/modules/products/product.model', () => ({}));
 
-process.env.CLIENT_URL = 'https://shop.example.com';
+// quotes, spaces and a trailing slash, as values often look after pasting
+process.env.CLIENT_URL = ' "https://shop.example.com/" , https://preview.example.com';
 process.env.JWT_SECRET = 'test_jwt_secret';
 
 const request = require('supertest');
@@ -35,6 +36,11 @@ describe('app', () => {
 
         expect(allowed.headers['access-control-allow-origin']).toBe('https://shop.example.com');
         expect(blocked.headers['access-control-allow-origin']).toBeUndefined();
+    });
+
+    it('accepts every origin in a comma-separated CLIENT_URL', async () => {
+        const res = await request(app).get('/api/nope').set('Origin', 'https://preview.example.com');
+        expect(res.headers['access-control-allow-origin']).toBe('https://preview.example.com');
     });
 
     it('rate limits auth endpoints after 20 requests', async () => {

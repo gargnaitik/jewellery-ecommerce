@@ -31,16 +31,23 @@ if (process.env.NODE_ENV !== 'test') {
     app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 }
 
-// CLIENT_URL can hold several comma-separated origins (e.g. prod + preview)
+// CLIENT_URL can hold several comma-separated origins (e.g. prod + preview).
+// Browsers send the origin as scheme://host with no trailing slash, so strip
+// the quotes, whitespace and trailing slashes that sneak in when pasting
+const normalizeOrigin = (origin) =>
+    origin.trim().replace(/^["']|["']$/g, '').trim().replace(/\/+$/, '').toLowerCase();
+
 const allowedOrigins = (process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:5173')
     .split(',')
-    .map((origin) => origin.trim())
+    .map(normalizeOrigin)
     .filter(Boolean);
+
+if (process.env.NODE_ENV !== 'test') console.log('🌐 CORS allowed origins:', allowedOrigins);
 
 app.use(cors({
     origin: (origin, callback) => {
         // allow same-origin / server-to-server requests with no Origin header
-        if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+        if (!origin || allowedOrigins.includes(normalizeOrigin(origin))) return callback(null, true);
         callback(null, false);
     },
 }));
